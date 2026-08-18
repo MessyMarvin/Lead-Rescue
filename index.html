@@ -1,624 +1,717 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lead Rescue AI — Stop Losing Customers When You Miss the Phone</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
-
-  :root{
-    --asphalt:#14171a;
-    --asphalt-2:#1c2023;
-    --surface:#20252a;
-    --line:#33393f;
-    --paper:#e9e6df;
-    --paper-dim:#a7adaf;
-    --signal:#ff5a33;      /* missed-call / alert */
-    --safety:#f5b400;      /* caution / brand accent */
-    --recovered:#3fb37f;   /* success / recovered lead */
-    --muted:#7c848b;
-  }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  html{scroll-behavior:smooth;}
-  body{
-    background:var(--asphalt);
-    color:var(--paper);
-    font-family:'Archivo', sans-serif;
-    line-height:1.5;
-    overflow-x:hidden;
-  }
-  ::selection{ background:var(--safety); color:var(--asphalt); }
-
-  h1,h2,h3{ font-family:'Archivo Black', sans-serif; text-transform:uppercase; letter-spacing:-0.01em; }
-  .eyebrow{
-    font-family:'JetBrains Mono', monospace;
-    text-transform:uppercase;
-    letter-spacing:0.14em;
-    font-size:12px;
-    color:var(--safety);
-    font-weight:600;
-  }
-  .mono{ font-family:'JetBrains Mono', monospace; }
-  a{ color:inherit; }
-
-  .wrap{ max-width:1180px; margin:0 auto; padding:0 32px; }
-  section{ position:relative; padding:110px 0; }
-
-  /* ===== hazard-stripe divider ===== */
-  .stripe{
-    height:10px;
-    background:repeating-linear-gradient(135deg, var(--safety) 0 18px, var(--asphalt) 18px 36px);
-    opacity:0.9;
-  }
-
-  /* ===== NAV ===== */
-  nav{
-    position:sticky; top:0; z-index:50;
-    background:rgba(20,23,26,0.92);
-    backdrop-filter:blur(8px);
-    border-bottom:1px solid var(--line);
-  }
-  nav .wrap{ display:flex; align-items:center; justify-content:space-between; padding:18px 32px; }
-  .logo{ display:flex; align-items:center; gap:10px; font-family:'Archivo Black'; font-size:18px; letter-spacing:-0.02em; }
-  .logo .dot{ width:10px; height:10px; background:var(--signal); border-radius:50%; box-shadow:0 0 0 4px rgba(255,90,51,0.18); animation:pulse 1.8s infinite; }
-  @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 4px rgba(255,90,51,0.18);} 50%{ box-shadow:0 0 0 8px rgba(255,90,51,0.05);} }
-  nav ul{ list-style:none; display:flex; gap:34px; font-size:14px; font-weight:600; }
-  nav ul a{ text-decoration:none; color:var(--paper-dim); transition:color .15s; }
-  nav ul a:hover{ color:var(--safety); }
-  .btn{
-    display:inline-flex; align-items:center; gap:8px;
-    background:var(--safety); color:var(--asphalt);
-    font-weight:700; text-transform:uppercase; letter-spacing:0.03em; font-size:13px;
-    padding:12px 22px; border-radius:3px; text-decoration:none; border:none; cursor:pointer;
-    transition:transform .15s ease, background .15s ease;
-  }
-  .btn:hover{ transform:translateY(-2px); background:#ffc934; }
-  .btn-ghost{
-    background:transparent; color:var(--paper); border:1px solid var(--line);
-  }
-  .btn-ghost:hover{ border-color:var(--safety); color:var(--safety); background:transparent; }
-
-  /* ===== HERO ===== */
-  .hero{ padding:90px 0 70px; }
-  .hero-grid{ display:grid; grid-template-columns:1.05fr 0.95fr; gap:64px; align-items:center; }
-  .hero h1{ font-size:clamp(38px,5vw,60px); line-height:0.98; margin:18px 0 22px; }
-  .hero h1 span{ color:var(--safety); }
-  .hero p.lede{ font-size:18px; color:var(--paper-dim); max-width:480px; margin-bottom:32px; }
-  .hero-ctas{ display:flex; gap:14px; margin-bottom:36px; flex-wrap:wrap; }
-  .hero-stats{ display:flex; gap:34px; border-top:1px solid var(--line); padding-top:22px; }
-  .hero-stats div b{ font-family:'Archivo Black'; font-size:22px; display:block; color:var(--safety); }
-  .hero-stats div span{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; }
-
-  /* ===== PHONE DEMO — the signature element ===== */
-  .phone-stage{ position:relative; display:flex; justify-content:center; }
-  .phone{
-    width:320px; background:var(--asphalt-2); border:1px solid var(--line);
-    border-radius:34px; padding:14px; box-shadow:0 40px 80px -20px rgba(0,0,0,0.6);
-  }
-  .phone-notch{ width:70px; height:5px; background:var(--line); border-radius:3px; margin:0 auto 10px; }
-  .phone-head{
-    display:flex; align-items:center; gap:10px; padding:6px 10px 14px; border-bottom:1px solid var(--line); margin-bottom:12px;
-  }
-  .phone-avatar{ width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--safety),var(--signal)); flex-shrink:0; }
-  .phone-head b{ font-size:14px; display:block; }
-  .phone-head span{ font-size:11px; color:var(--muted); }
-  .phone-status{
-    margin-left:auto; font-family:'JetBrains Mono'; font-size:10px; padding:3px 8px; border-radius:20px;
-    background:rgba(255,90,51,0.15); color:var(--signal); border:1px solid rgba(255,90,51,0.4);
-    text-transform:uppercase; letter-spacing:.05em;
-  }
-  .phone-status.recovered{ background:rgba(63,179,127,0.15); color:var(--recovered); border-color:rgba(63,179,127,0.4); }
-  .thread{ height:340px; overflow:hidden; display:flex; flex-direction:column; gap:9px; padding:2px 2px 4px; }
-  .bubble{
-    max-width:82%; padding:9px 13px; border-radius:14px; font-size:12.5px; line-height:1.4;
-    opacity:0; transform:translateY(8px); animation:rise .35s ease forwards;
-  }
-  @keyframes rise{ to{ opacity:1; transform:translateY(0);} }
-  .bubble.sys{ align-self:flex-start; background:var(--surface); border:1px solid var(--line); border-bottom-left-radius:3px; }
-  .bubble.cust{ align-self:flex-end; background:var(--safety); color:var(--asphalt); font-weight:600; border-bottom-right-radius:3px; }
-  .bubble.card{
-    align-self:stretch; background:rgba(63,179,127,0.1); border:1px solid rgba(63,179,127,0.45);
-    border-radius:10px; padding:10px 12px; font-family:'JetBrains Mono'; font-size:11px; color:var(--recovered);
-  }
-  .bubble.card b{ display:block; color:var(--paper); font-family:'Archivo'; font-size:12.5px; margin-bottom:4px; }
-  .replay{
-    position:absolute; bottom:-18px; left:50%; transform:translateX(-50%);
-    font-family:'JetBrains Mono'; font-size:11px; color:var(--muted); background:var(--asphalt);
-    padding:4px 12px; border:1px solid var(--line); border-radius:20px; cursor:pointer;
-  }
-  .replay:hover{ color:var(--safety); border-color:var(--safety); }
-
-  /* ===== PROBLEM ===== */
-  .problem .wrap{ display:grid; grid-template-columns:0.9fr 1.1fr; gap:60px; align-items:start; }
-  .problem h2{ font-size:clamp(28px,3.4vw,40px); line-height:1.05; margin:14px 0 20px; }
-  .problem p{ color:var(--paper-dim); max-width:420px; }
-  .call-race{ display:flex; flex-direction:column; gap:0; }
-  .call-step{ display:flex; gap:18px; padding:20px 0; border-bottom:1px solid var(--line); }
-  .call-step:last-child{ border-bottom:none; }
-  .call-step .tag{
-    font-family:'JetBrains Mono'; font-size:11px; color:var(--asphalt); background:var(--paper-dim);
-    width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius:50%; flex-shrink:0; font-weight:700;
-  }
-  .call-step.bad .tag{ background:var(--signal); color:#fff; }
-  .call-step.good .tag{ background:var(--recovered); color:#fff; }
-  .call-step h4{ font-size:15px; margin-bottom:4px; text-transform:none; font-family:'Archivo'; font-weight:700; }
-  .call-step p{ font-size:13.5px; color:var(--muted); margin:0; max-width:none; }
-
-  /* ===== HOW IT WORKS ===== */
-  .how{ background:var(--asphalt-2); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
-  .how-head{ max-width:560px; margin-bottom:56px; }
-  .how-head h2{ font-size:clamp(28px,3.4vw,40px); margin:14px 0 16px; }
-  .flow{ display:flex; flex-wrap:wrap; gap:0; counter-reset:step; }
-  .flow-step{
-    flex:1 1 220px; padding:26px 22px; border:1px solid var(--line); background:var(--surface);
-    position:relative; margin:-1px 0 0 -1px;
-  }
-  .flow-step .n{ font-family:'JetBrains Mono'; font-size:12px; color:var(--safety); display:block; margin-bottom:10px; }
-  .flow-step h4{ font-size:14.5px; text-transform:none; font-family:'Archivo'; font-weight:700; margin-bottom:6px; }
-  .flow-step p{ font-size:12.5px; color:var(--muted); }
-
-  /* ===== PRICING ===== */
-  .pricing-head{ text-align:center; max-width:600px; margin:0 auto 56px; }
-  .pricing-head h2{ font-size:clamp(28px,3.4vw,40px); margin:14px 0 16px; }
-  .pricing-head p{ color:var(--paper-dim); }
-  .plans{ display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
-  .plan{
-    background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:32px 26px;
-    display:flex; flex-direction:column; gap:18px; position:relative;
-  }
-  .plan.featured{ border-color:var(--safety); box-shadow:0 0 0 1px var(--safety), 0 30px 60px -30px rgba(245,180,0,0.25); }
-  .plan.featured::before{
-    content:'MOST INSTALLED'; position:absolute; top:-12px; left:26px; background:var(--safety); color:var(--asphalt);
-    font-family:'JetBrains Mono'; font-size:10px; font-weight:700; padding:4px 10px; border-radius:3px; letter-spacing:.05em;
-  }
-  .plan h3{ font-size:18px; letter-spacing:0.02em; }
-  .plan .price{ font-family:'Archivo Black'; font-size:40px; }
-  .plan .price span{ font-family:'Archivo'; font-size:14px; color:var(--muted); text-transform:none; font-weight:400; }
-  .plan .setup{ font-family:'JetBrains Mono'; font-size:12px; color:var(--muted); }
-  .plan ul{ list-style:none; display:flex; flex-direction:column; gap:10px; font-size:13.5px; color:var(--paper-dim); }
-  .plan li::before{ content:'—'; color:var(--safety); margin-right:8px; }
-  .plan .btn{ margin-top:auto; text-align:center; justify-content:center; }
-
-  /* ===== INDUSTRIES ===== */
-  .industries .wrap{ display:grid; grid-template-columns:0.8fr 1.2fr; gap:60px; align-items:center; }
-  .industries h2{ font-size:clamp(28px,3.4vw,40px); margin:14px 0 16px; }
-  .industries p{ color:var(--paper-dim); max-width:420px; }
-  .chips{ display:flex; flex-wrap:wrap; gap:10px; }
-  .chip{
-    font-family:'JetBrains Mono'; font-size:12.5px; padding:9px 16px; border:1px solid var(--line); border-radius:20px;
-    color:var(--paper-dim); transition:.15s;
-  }
-  .chip.now{ border-color:var(--safety); color:var(--safety); background:rgba(245,180,0,0.08); }
-  .chip:hover{ border-color:var(--paper-dim); color:var(--paper); }
-
-  /* ===== CTA ===== */
-  .cta{ text-align:center; }
-  .cta h2{ font-size:clamp(30px,4.4vw,52px); max-width:760px; margin:0 auto 20px; line-height:1.05; }
-  .cta p{ color:var(--paper-dim); max-width:480px; margin:0 auto 34px; }
-  .cta .btn{ font-size:15px; padding:16px 30px; }
-
-  footer{ border-top:1px solid var(--line); padding:44px 0; }
-  footer .wrap{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
-  footer .foot-links{ display:flex; gap:24px; list-style:none; font-size:13px; color:var(--muted); }
-  footer .foot-links a{ text-decoration:none; }
-  footer .foot-links a:hover{ color:var(--safety); }
-  footer .tag-line{ font-family:'JetBrains Mono'; font-size:12px; color:var(--muted); }
-
-  /* ===== LEAD FORM ===== */
-  .lead-section{ background:var(--asphalt-2); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
-  .lead-grid{ display:grid; grid-template-columns:0.85fr 1.15fr; gap:60px; align-items:flex-start; }
-  .lead-copy h2{ font-size:clamp(28px,3.4vw,40px); margin:14px 0 16px; }
-  .lead-copy p{ color:var(--paper-dim); max-width:400px; margin-bottom:26px; }
-  .lead-note{ display:flex; gap:10px; font-size:12px; color:var(--muted); border-left:2px solid var(--safety); padding-left:12px; max-width:380px; }
-  .lead-card{ background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:30px; }
-  .lead-card h3{ font-size:14px; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:20px; font-family:'Archivo'; font-weight:700; }
-  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
-  .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
-  .field label{ font-family:'JetBrains Mono'; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; }
-  .field input, .field select{
-    background:var(--asphalt); border:1px solid var(--line); color:var(--paper);
-    padding:11px 12px; border-radius:4px; font-family:'Archivo'; font-size:14px; outline:none;
-    transition:border-color .15s;
-  }
-  .field input:focus, .field select:focus{ border-color:var(--safety); }
-  .field-row .field{ margin-bottom:0; }
-  .submit-btn{ width:100%; justify-content:center; font-size:14px; padding:14px; margin-top:4px; }
-  .submit-btn:disabled{ opacity:0.6; cursor:not-allowed; transform:none; }
-  .form-msg{ font-family:'JetBrains Mono'; font-size:12px; margin-top:14px; display:none; }
-  .form-msg.show{ display:block; }
-  .form-msg.err{ color:var(--signal); }
-  .lead-success{ display:none; text-align:center; padding:20px 4px; }
-  .lead-success.show{ display:block; }
-  .lead-success .check{ width:44px; height:44px; border-radius:50%; background:rgba(63,179,127,0.15); border:1px solid var(--recovered); color:var(--recovered); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:20px; }
-  .lead-success h4{ font-family:'Archivo'; font-size:16px; margin-bottom:6px; }
-  .lead-success p{ color:var(--muted); font-size:13px; }
-  .lead-ticket{
-    margin-top:18px; text-align:left; background:rgba(63,179,127,0.08); border:1px solid rgba(63,179,127,0.4);
-    border-radius:8px; padding:14px; font-family:'JetBrains Mono'; font-size:12px; color:var(--recovered);
-  }
-  .lead-ticket b{ display:block; color:var(--paper); font-family:'Archivo'; font-size:12.5px; margin-bottom:6px; }
-
-  @media (max-width:900px){
-    .lead-grid{ grid-template-columns:1fr; }
-    .field-row{ grid-template-columns:1fr; }
-    nav ul{ display:none; }
-    .hero-grid, .problem .wrap, .industries .wrap{ grid-template-columns:1fr; }
-    .plans{ grid-template-columns:1fr; }
-    .flow-step{ flex:1 1 100%; }
-    section{ padding:70px 0; }
-  }
-</style>
-</head>
-<body>
-
-<nav>
-  <div class="wrap">
-    <div class="logo"><span class="dot"></span>LEAD RESCUE <span style="color:var(--safety)">AI</span></div>
-    <ul>
-      <li><a href="#how">How it Works</a></li>
-      <li><a href="#pricing">Pricing</a></li>
-      <li><a href="#industries">Industries</a></li>
-    </ul>
-    <a href="#demo" class="btn">See a Live Demo</a>
-  </div>
-</nav>
-
-<div class="stripe"></div>
-
-<header class="hero">
-  <div class="wrap hero-grid">
-    <div>
-      <span class="eyebrow">// Missed-Call Recovery for Contractors</span>
-      <h1>Stop losing customers<br>when you miss <span>the phone.</span></h1>
-      <p class="lede">You already paid to make the phone ring. Lead Rescue AI automatically texts, qualifies, and books every missed caller before they dial your competitor.</p>
-      <div class="hero-ctas">
-        <a href="#demo" class="btn">Watch the Recovery Happen →</a>
-        <a href="#pricing" class="btn btn-ghost">View Pricing</a>
-      </div>
-      <div class="hero-stats">
-        <div><b>&lt;10 sec</b><span>Response after missed call</span></div>
-        <div><b>24/7</b><span>Coverage, no extra staff</span></div>
-        <div><b>0</b><span>Leads left on the table</span></div>
-      </div>
-    </div>
-
-    <div class="phone-stage" id="demo">
-      <div class="phone">
-        <div class="phone-notch"></div>
-        <div class="phone-head">
-          <div class="phone-avatar"></div>
-          <div>
-            <b>Gulf Coast Roofing</b>
-            <span>Automated assistant</span>
-          </div>
-          <span class="phone-status" id="phoneStatus">missed call</span>
-        </div>
-        <div class="thread" id="thread"></div>
-      </div>
-      <div class="replay" id="replayBtn">↺ replay recovery</div>
-    </div>
-  </div>
-</header>
-
-<div class="stripe"></div>
-
-<section class="problem">
-  <div class="wrap">
-    <div>
-      <span class="eyebrow">// The Problem</span>
-      <h2>Every unanswered call is a lead handed to your competitor.</h2>
-      <p>A homeowner finds a leak, calls three roofers, and books whoever answers first. It's rarely about who's better — it's about who responded. Speed decides the sale before the estimate ever happens.</p>
-    </div>
-    <div class="call-race">
-      <div class="call-step bad">
-        <div class="tag">1</div>
-        <div><h4>Homeowner calls Company A</h4><p>Crew is on a roof. Nobody picks up.</p></div>
-      </div>
-      <div class="call-step bad">
-        <div class="tag">2</div>
-        <div><h4>No response for 20+ minutes</h4><p>The ad spend that generated the call is now wasted.</p></div>
-      </div>
-      <div class="call-step bad">
-        <div class="tag">3</div>
-        <div><h4>Homeowner calls Company B</h4><p>Same job. Different contractor. Lost margin.</p></div>
-      </div>
-      <div class="call-step good">
-        <div class="tag">✓</div>
-        <div><h4>With Lead Rescue AI installed</h4><p>The missed call triggers an instant text, qualifies the job, and books the estimate — automatically.</p></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="how" id="how">
-  <div class="wrap">
-    <div class="how-head">
-      <span class="eyebrow">// How It Works</span>
-      <h2>One missed call. Eight automated steps. Zero lost opportunity.</h2>
-    </div>
-    <div class="flow">
-      <div class="flow-step"><span class="n">01</span><h4>Call comes in</h4><p>A prospect calls your business line.</p></div>
-      <div class="flow-step"><span class="n">02</span><h4>Call goes unanswered</h4><p>Crew's on a roof, on a job, or off the clock.</p></div>
-      <div class="flow-step"><span class="n">03</span><h4>Instant text-back</h4><p>Lead Rescue texts the caller in seconds.</p></div>
-      <div class="flow-step"><span class="n">04</span><h4>Prospect replies</h4><p>They engage instead of calling the next company.</p></div>
-      <div class="flow-step"><span class="n">05</span><h4>Qualification</h4><p>Approved questions collect the details you need.</p></div>
-      <div class="flow-step"><span class="n">06</span><h4>Info recorded</h4><p>Name, address, urgency, service — logged automatically.</p></div>
-      <div class="flow-step"><span class="n">07</span><h4>Appointment offered</h4><p>The prospect is moved toward a booked estimate.</p></div>
-      <div class="flow-step"><span class="n">08</span><h4>You get the lead</h4><p>A structured notification lands in your inbox.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="pricing" id="pricing">
-  <div class="wrap">
-    <div class="pricing-head">
-      <span class="eyebrow">// Pricing</span>
-      <h2>Pick a package. We install everything.</h2>
-      <p>Every plan replaces the customer you're currently losing after hours — not just another software login.</p>
-    </div>
-    <div class="plans">
-      <div class="plan">
-        <h3>Starter</h3>
-        <div class="price">$299<span>/mo</span></div>
-        <div class="setup">$499 setup</div>
-        <ul>
-          <li>Missed-call text-back</li>
-          <li>Basic lead capture</li>
-          <li>Basic automated responses</li>
-          <li>Review requests</li>
-          <li>Monthly performance summary</li>
-        </ul>
-        <a href="#get-demo" class="btn btn-ghost">Get Started</a>
-      </div>
-      <div class="plan featured">
-        <h3>Growth</h3>
-        <div class="price">$599<span>/mo</span></div>
-        <div class="setup">$999 setup</div>
-        <ul>
-          <li>Missed-call recovery</li>
-          <li>AI-assisted conversations</li>
-          <li>Lead qualification</li>
-          <li>Website lead response</li>
-          <li>Appointment scheduling</li>
-          <li>Estimate follow-up + CRM pipeline</li>
-        </ul>
-        <a href="#get-demo" class="btn">Get Started</a>
-      </div>
-      <div class="plan">
-        <h3>Pro</h3>
-        <div class="price">$999<span>/mo</span></div>
-        <div class="setup">$1,500 setup</div>
-        <ul>
-          <li>Everything in Growth</li>
-          <li>Advanced workflows</li>
-          <li>Multiple campaigns</li>
-          <li>Old-lead reactivation</li>
-          <li>Multi-location support</li>
-          <li>Priority support</li>
-        </ul>
-        <a href="#get-demo" class="btn btn-ghost">Get Started</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="industries" id="industries">
-  <div class="wrap">
-    <div>
-      <span class="eyebrow">// Built for Roofing First</span>
-      <h2>Then every high-value trade that misses calls.</h2>
-      <p>We're starting narrow — roofing contractors who already generate inbound leads — and expanding the same playbook into the industries below.</p>
-    </div>
-    <div class="chips">
-      <span class="chip now">Roofing — live</span>
-      <span class="chip">HVAC</span>
-      <span class="chip">Plumbing</span>
-      <span class="chip">Electrical</span>
-      <span class="chip">Tree Removal</span>
-      <span class="chip">Land Clearing</span>
-      <span class="chip">Concrete</span>
-      <span class="chip">Remodeling</span>
-      <span class="chip">Pressure Washing</span>
-      <span class="chip">Pest Control</span>
-      <span class="chip">Landscaping</span>
-      <span class="chip">Auto Detailing</span>
-      <span class="chip">Dental</span>
-      <span class="chip">Med Spa</span>
-    </div>
-  </div>
-</section>
-
-<div class="stripe"></div>
-
-<section class="lead-section" id="get-demo">
-  <div class="wrap lead-grid">
-    <div class="lead-copy">
-      <span class="eyebrow">// Get Set Up</span>
-      <h2>Tell us about your business. We'll build the demo.</h2>
-      <p>Founding-client pilots start at $250 to implement, then $199–$299 for the first month before rolling onto a standard plan. No fabricated numbers — just your real missed calls, recovered.</p>
-      <div class="lead-note">Submissions are stored so our team can follow up — visible to anyone reviewing demo requests on this page.</div>
-    </div>
-
-    <div class="lead-card">
-      <div id="leadFormWrap">
-        <h3>Request Your Demo</h3>
-        <form id="leadForm">
-          <div class="field-row">
-            <div class="field">
-              <label for="fName">Full name</label>
-              <input id="fName" type="text" required placeholder="Jordan Alvarez">
-            </div>
-            <div class="field">
-              <label for="fBiz">Business name</label>
-              <input id="fBiz" type="text" required placeholder="Gulf Coast Roofing">
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label for="fPhone">Phone</label>
-              <input id="fPhone" type="tel" required placeholder="(555) 555-0192">
-            </div>
-            <div class="field">
-              <label for="fEmail">Email</label>
-              <input id="fEmail" type="email" required placeholder="jordan@gulfcoastroofing.com">
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label for="fIndustry">Industry</label>
-              <select id="fIndustry">
-                <option>Roofing</option>
-                <option>HVAC</option>
-                <option>Plumbing</option>
-                <option>Electrical</option>
-                <option>Remodeling</option>
-                <option>Other Home Service</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="fMissed">Missed calls / week</label>
-              <select id="fMissed">
-                <option>1–5</option>
-                <option>6–15</option>
-                <option>16–30</option>
-                <option>30+</option>
-                <option>Not sure</option>
-              </select>
-            </div>
-          </div>
-          <button type="submit" class="btn submit-btn" id="leadSubmitBtn">Request My Demo →</button>
-          <div class="form-msg" id="leadMsg"></div>
-        </form>
-      </div>
-
-      <div class="lead-success" id="leadSuccess">
-        <div class="check">✓</div>
-        <h4>Request received</h4>
-        <p>We'll text and email you within one business day to schedule your live demo.</p>
-        <div class="lead-ticket" id="leadTicket"></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div class="stripe"></div>
-
-<section class="cta">
-  <div class="wrap">
-    <span class="eyebrow">// Ready When You Are</span>
-    <h2>Let's see what your last missed call actually cost you.</h2>
-    <p>Get a demo built around your business type — same conversation, same speed, your leads.</p>
-    <a href="#get-demo" class="btn">Request A Demo →</a>
-  </div>
-</section>
-
-<footer>
-  <div class="wrap">
-    <span class="tag-line">© 2026 Lead Rescue AI — Every missed call deserves a second chance.</span>
-    <ul class="foot-links">
-      <li><a href="#how">How It Works</a></li>
-      <li><a href="#pricing">Pricing</a></li>
-      <li><a href="#">Privacy</a></li>
-      <li><a href="#">Terms</a></li>
-    </ul>
-  </div>
-</footer>
-
-<script>
-const script = [
-  {who:'sys', text:"Hi! Sorry we missed your call. This is Gulf Coast Roofing's automated assistant. Are you looking for a repair, replacement, inspection, or something else?"},
-  {who:'cust', text:"My roof is leaking."},
-  {who:'sys', text:"I can help get your info to the team right away. Is the leak currently active?"},
-  {who:'cust', text:"Yes, it's dripping into the hallway."},
-  {who:'sys', text:"Got it — that's urgent. What's the property address?"},
-  {who:'cust', text:"214 Magnolia St."},
-  {who:'sys', text:"Thanks! I can get a crew out tomorrow morning. Does 9 AM work?"},
-  {who:'cust', text:"9 AM works, thank you!"},
-  {who:'card', title:'NEW ROOFING LEAD — NOTIFIED', text:"Name: J. Alvarez\nAddress: 214 Magnolia St\nService: Active leak repair\nUrgency: High\nStatus: Appointment booked, 9:00 AM"}
-];
-
-const thread = document.getElementById('thread');
-const statusEl = document.getElementById('phoneStatus');
-const replayBtn = document.getElementById('replayBtn');
-let playing = false;
-
-function bubbleEl(step){
-  const el = document.createElement('div');
-  if(step.who === 'card'){
-    el.className = 'bubble card';
-    el.innerHTML = `<b>${step.title}</b>${step.text.replace(/\\n/g,'<br>')}`;
-  } else {
-    el.className = 'bubble ' + step.who;
-    el.textContent = step.text;
-  }
-  return el;
+0001 <!DOCTYPE html>
+0002 <html lang="en">
+0003 <head>
+0004 <meta charset="UTF-8">
+0005 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+0006 <title>Lead Rescue AI — Stop Losing Customers When You Miss the Phone</title>
+0007 <style>
+0008 @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600
+&display=swap');
+0009
+0010 :root{
+0011 --asphalt:#14171a;
+0012 --asphalt-2:#1c2023;
+0013 --surface:#20252a;
+0014 --line:#33393f;
+0015 --paper:#e9e6df;
+0016 --paper-dim:#a7adaf;
+0017 --signal:#ff5a33; /* missed-call / alert */
+0018 --safety:#f5b400; /* caution / brand accent */
+0019 --recovered:#3fb37f; /* success / recovered lead */
+0020 --muted:#7c848b;
+0021 }
+0022 *{box-sizing:border-box; margin:0; padding:0;}
+0023 html{scroll-behavior:smooth;}
+0024 body{
+0025 background:var(--asphalt);
+0026 color:var(--paper);
+0027 font-family:'Archivo', sans-serif;
+0028 line-height:1.5;
+0029 overflow-x:hidden;
+0030 }
+0031 ::selection{ background:var(--safety); color:var(--asphalt); }
+0032
+0033 h1,h2,h3{ font-family:'Archivo Black', sans-serif; text-transform:uppercase; letter-spacing:-0.01em; }
+0034 .eyebrow{
+0035 font-family:'JetBrains Mono', monospace;
+0036 text-transform:uppercase;
+0037 letter-spacing:0.14em;
+0038 font-size:12px;
+0039 color:var(--safety);
+0040 font-weight:600;
+0041 }
+0042 .mono{ font-family:'JetBrains Mono', monospace; }
+0043 a{ color:inherit; }
+0044
+0045 0046 .wrap{ max-width:1180px; margin:0 auto; padding:0 32px; }
+section{ position:relative; padding:110px 0; }
+0047
+0048 /* ===== hazard-stripe divider ===== */
+0049 .stripe{
+0050 height:10px;
+0051 background:repeating-linear-gradient(135deg, var(--safety) 0 18px, var(--asphalt) 18px 36px);
+0052 opacity:0.9;
+0053 }
+0054
+0055 /* ===== NAV ===== */
+0056 nav{
+0057 position:sticky; top:0; z-index:50;
+0058 background:rgba(20,23,26,0.92);
+0059 backdrop-filter:blur(8px);
+0060 border-bottom:1px solid var(--line);
+0061 }
+0062 0063 0064 nav .wrap{ display:flex; align-items:center; justify-content:space-between; padding:18px 32px; }
+.logo{ display:flex; align-items:center; gap:10px; font-family:'Archivo Black'; font-size:18px; letter-spacing:-0.02em; }
+.logo .dot{ width:10px; height:10px; background:var(--signal); border-radius:50%; box-shadow:0 0 0 4px rgba(255,90,51,0.18);
+animation:pulse 1.8s infinite; }
+0065 @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 4px rgba(255,90,51,0.18);} 50%{ box-shadow:0 0 0 8px rgba(255,90,51,0.05);} }
+0066 nav ul{ list-style:none; display:flex; gap:34px; font-size:14px; font-weight:600; }
+0067 nav ul a{ text-decoration:none; color:var(--paper-dim); transition:color .15s; }
+0068 nav ul a:hover{ color:var(--safety); }
+0069 .btn{
+0070 display:inline-flex; align-items:center; gap:8px;
+0071 background:var(--safety); color:var(--asphalt);
+0072 font-weight:700; text-transform:uppercase; letter-spacing:0.03em; font-size:13px;
+0073 padding:12px 22px; border-radius:3px; text-decoration:none; border:none; cursor:pointer;
+0074 transition:transform .15s ease, background .15s ease;
+0075 }
+0076 .btn:hover{ transform:translateY(-2px); background:#ffc934; }
+0077 .btn-ghost{
+0078 background:transparent; color:var(--paper); border:1px solid var(--line);
+0079 }
+0080 .btn-ghost:hover{ border-color:var(--safety); color:var(--safety); background:transparent; }
+0081
+0082 0083 0084 0085 0086 0087 0088 0089 0090 0091 /* ===== HERO ===== */
+.hero{ padding:90px 0 70px; }
+.hero-grid{ display:grid; grid-template-columns:1.05fr 0.95fr; gap:64px; align-items:center; }
+.hero h1{ font-size:clamp(38px,5vw,60px); line-height:0.98; margin:18px 0 22px; }
+.hero h1 span{ color:var(--safety); }
+.hero p.lede{ font-size:18px; color:var(--paper-dim); max-width:480px; margin-bottom:32px; }
+.hero-ctas{ display:flex; gap:14px; margin-bottom:36px; flex-wrap:wrap; }
+.hero-stats{ display:flex; gap:34px; border-top:1px solid var(--line); padding-top:22px; }
+.hero-stats div b{ font-family:'Archivo Black'; font-size:22px; display:block; color:var(--safety); }
+.hero-stats div span{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; }
+0092
+0093 0094 /* ===== PHONE DEMO — the signature element ===== */
+.phone-stage{ position:relative; display:flex; justify-content:center; }
+0095 .phone{
+0096 0097 width:320px; background:var(--asphalt-2); border:1px solid var(--line);
+border-radius:34px; padding:14px; box-shadow:0 40px 80px -20px rgba(0,0,0,0.6);
+0098 }
+0099 .phone-notch{ width:70px; height:5px; background:var(--line); border-radius:3px; margin:0 auto 10px; }
+0100 .phone-head{
+0101 display:flex; align-items:center; gap:10px; padding:6px 10px 14px; border-bottom:1px solid var(--line); margin-bottom:12px;
+0102 }
+0103 .phone-avatar{ width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--safety),var(--signal)); flex-shrink:0;
 }
+0104 .phone-head b{ font-size:14px; display:block; }
+0105 .phone-head span{ font-size:11px; color:var(--muted); }
+0106 .phone-status{
+0107 margin-left:auto; font-family:'JetBrains Mono'; font-size:10px; padding:3px 8px; border-radius:20px;
+0108 background:rgba(255,90,51,0.15); color:var(--signal); border:1px solid rgba(255,90,51,0.4);
+0109 text-transform:uppercase; letter-spacing:.05em;
+0110 }
+0111 .phone-status.recovered{ background:rgba(63,179,127,0.15); color:var(--recovered); border-color:rgba(63,179,127,0.4); }
+0112 .thread{ height:340px; overflow:hidden; display:flex; flex-direction:column; gap:9px; padding:2px 2px 4px; }
+0113 .bubble{
+0114 max-width:82%; padding:9px 13px; border-radius:14px; font-size:12.5px; line-height:1.4;
+0115 opacity:0; transform:translateY(8px); animation:rise .35s ease forwards;
+0116 }
+0117 @keyframes rise{ to{ opacity:1; transform:translateY(0);} }
+0118 .bubble.sys{ align-self:flex-start; background:var(--surface); border:1px solid var(--line); border-bottom-left-radius:3px; }
+0119 .bubble.cust{ align-self:flex-end; background:var(--safety); color:var(--asphalt); font-weight:600; border-bottom-right-radius:3px; }
+0120 .bubble.card{
+0121 align-self:stretch; background:rgba(63,179,127,0.1); border:1px solid rgba(63,179,127,0.45);
+0122 border-radius:10px; padding:10px 12px; font-family:'JetBrains Mono'; font-size:11px; color:var(--recovered);
+0123 }
+0124 .bubble.card b{ display:block; color:var(--paper); font-family:'Archivo'; font-size:12.5px; margin-bottom:4px; }
+0125 .replay{
+0126 position:absolute; bottom:-18px; left:50%; transform:translateX(-50%);
+0127 font-family:'JetBrains Mono'; font-size:11px; color:var(--muted); background:var(--asphalt);
+LEA
+0128 padding:4px 12px; border:1px solid var(--line); border-radius:20px; cursor:pointer;
+0129 }
+0130 .replay:hover{ color:var(--safety); border-color:var(--safety); }
+0131
+0132 /* ===== PROBLEM ===== */
+0133 .problem .wrap{ display:grid; grid-template-columns:0.9fr 1.1fr; gap:60px; align-items:start; }
+0134 .problem h2{ font-size:clamp(28px,3.4vw,40px); line-height:1.05; margin:14px 0 20px; }
+0135 .problem p{ color:var(--paper-dim); max-width:420px; }
+0136 .call-race{ display:flex; flex-direction:column; gap:0; }
+0137 .call-step{ display:flex; gap:18px; padding:20px 0; border-bottom:1px solid var(--line); }
+0138 .call-step:last-child{ border-bottom:none; }
+0139 .call-step .tag{
+0140 0141 font-family:'JetBrains Mono'; font-size:11px; color:var(--asphalt); background:var(--paper-dim);
+width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius:50%; flex-shrink:0; font-weight:700;
+0142 }
+0143 0144 0145 0146 .call-step.bad .tag{ background:var(--signal); color:#fff; }
+.call-step.good .tag{ background:var(--recovered); color:#fff; }
+.call-step h4{ font-size:15px; margin-bottom:4px; text-transform:none; font-family:'Archivo'; font-weight:700; }
+.call-step p{ font-size:13.5px; color:var(--muted); margin:0; max-width:none; }
+0147
+0148 /* ===== HOW IT WORKS ===== */
+0149 .how{ background:var(--asphalt-2); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+0150 .how-head{ max-width:560px; margin-bottom:56px; }
+0151 .how-head h2{ font-size:clamp(28px,3.4vw,40px); margin:14px 0 16px; }
+0152 .flow{ display:flex; flex-wrap:wrap; gap:0; counter-reset:step; }
+0153 .flow-step{
+0154 flex:1 1 220px; padding:26px 22px; border:1px solid var(--line); background:var(--surface);
+0155 position:relative; margin:-1px 0 0 -1px;
+0156 }
+0157 0158 0159 .flow-step .n{ font-family:'JetBrains Mono'; font-size:12px; color:var(--safety); display:block; margin-bottom:10px; }
+.flow-step h4{ font-size:14.5px; text-transform:none; font-family:'Archivo'; font-weight:700; margin-bottom:6px; }
+.flow-step p{ font-size:12.5px; color:var(--muted); }
+0160
+0161 /* ===== PRICING ===== */
+0162 .pricing-head{ text-align:center; max-width:600px; margin:0 auto 56px; }
+0163 .pricing-head h2{ font-size:clamp(28px,3.4vw,40px); margin:14px 0 16px; }
+0164 .pricing-head p{ color:var(--paper-dim); }
+0165 .plans{ display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
+0166 .plan{
+0167 background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:32px 26px;
+0168 display:flex; flex-direction:column; gap:18px; position:relative;
+0169 }
+0170 .plan.featured{ border-color:var(--safety); box-shadow:0 0 0 1px var(--safety), 0 30px 60px -30px rgba(245,180,0,0.25); }
+0172 0171 .plan.featured::before{
+content:'MOST INSTALLED'; position:absolute; top:-12px; left:26px; background:var(--safety); color:var(--asphalt);
+font-family:'JetBrains Mono'; font-size:10px; font-weight:700; padding:4px 10px; border-radius:3px; letter-spacing:.05em;
+0173 0174 }
+0175 0176 0177 0178 0179 0180 0181 .plan h3{ font-size:18px; letter-spacing:0.02em; }
+.plan .price{ font-family:'Archivo Black'; font-size:40px; }
+.plan .price span{ font-family:'Archivo'; font-size:14px; color:var(--muted); text-transform:none; font-weight:400; }
+.plan .setup{ font-family:'JetBrains Mono'; font-size:12px; color:var(--muted); }
+.plan ul{ list-style:none; display:flex; flex-direction:column; gap:10px; font-size:13.5px; color:var(--paper-dim); }
+.plan li::before{ content:'—'; color:var(--safety); margin-right:8px; }
+.plan .btn{ margin-top:auto; text-align:center; justify-content:center; }
+0182
+0183 /* ===== INDUSTRIES ===== */
+0184 .industries .wrap{ display:grid; grid-template-columns:0.8fr 1.2fr; gap:60px; align-items:center; }
+0185 .industries h2{ font-size:clamp(28px,3.4vw,40px); margin:14px 0 16px; }
+0186 .industries p{ color:var(--paper-dim); max-width:420px; }
+0187 .chips{ display:flex; flex-wrap:wrap; gap:10px; }
+0188 .chip{
+0189 font-family:'JetBrains Mono'; font-size:12.5px; padding:9px 16px; border:1px solid var(--line); border-radius:20px;
+0190 color:var(--paper-dim); transition:.15s;
+0191 }
+0192 .chip.now{ border-color:var(--safety); color:var(--safety); background:rgba(245,180,0,0.08); }
+LEAD 
+0193 .chip:hover{ border-color:var(--paper-dim); color:var(--paper); }
+0194
+0195 0197 0198 0199 0200
+0201 0202 0203 0204 0205 0206 0207
+0208 0209 0210 0211 0212 0213 /* ===== CTA ===== */
+0196 .cta{ text-align:center; }
+.cta h2{ font-size:clamp(30px,4.4vw,52px); max-width:760px; margin:0 auto 20px; line-height:1.05; }
+.cta p{ color:var(--paper-dim); max-width:480px; margin:0 auto 34px; }
+.cta .btn{ font-size:15px; padding:16px 30px; }
+footer{ border-top:1px solid var(--line); padding:44px 0; }
+footer .wrap{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
+footer .foot-links{ display:flex; gap:24px; list-style:none; font-size:13px; color:var(--muted); }
+footer .foot-links a{ text-decoration:none; }
+footer .foot-links a:hover{ color:var(--safety); }
+footer .tag-line{ font-family:'JetBrains Mono'; font-size:12px; color:var(--muted); }
+/* ===== LEAD FORM ===== */
+.lead-section{ background:var(--asphalt-2); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.lead-grid{ display:grid; grid-template-columns:0.85fr 1.15fr; gap:60px; align-items:flex-start; }
+.lead-copy h2{ font-size:clamp(28px,3.4vw,40px); margin:14px 0 16px; }
+.lead-copy p{ color:var(--paper-dim); max-width:400px; margin-bottom:26px; }
+.lead-note{ display:flex; gap:10px; font-size:12px; color:var(--muted); border-left:2px solid var(--safety); padding-left:12px;
+max-width:380px; }
+0214 .lead-card{ background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:30px; }
+0215 .lead-card h3{ font-size:14px; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:20px; font-family:'Archivo';
+font-weight:700; }
+0216 .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+0217 .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+0218 .field label{ font-family:'JetBrains Mono'; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; }
+0219 .field input, .field select{
+0220 background:var(--asphalt); border:1px solid var(--line); color:var(--paper);
+0221 padding:11px 12px; border-radius:4px; font-family:'Archivo'; font-size:14px; outline:none;
+0222 transition:border-color .15s;
+0223 }
+0224 .field input:focus, .field select:focus{ border-color:var(--safety); }
+0225 .field-row .field{ margin-bottom:0; }
+0226 .submit-btn{ width:100%; justify-content:center; font-size:14px; padding:14px; margin-top:4px; }
+0227 .submit-btn:disabled{ opacity:0.6; cursor:not-allowed; transform:none; }
+0228 .form-msg{ font-family:'JetBrains Mono'; font-size:12px; margin-top:14px; display:none; }
+0229 .form-msg.show{ display:block; }
+0230 .form-msg.err{ color:var(--signal); }
+0231 .lead-success{ display:none; text-align:center; padding:20px 4px; }
+0232 .lead-success.show{ display:block; }
+0233 .lead-success .check{ width:44px; height:44px; border-radius:50%; background:rgba(63,179,127,0.15); border:1px solid var(--recovered);
+color:var(--recovered); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:20px; }
+0234 .lead-success h4{ font-family:'Archivo'; font-size:16px; margin-bottom:6px; }
+0235 .lead-success p{ color:var(--muted); font-size:13px; }
+0236 .lead-ticket{
+0237 margin-top:18px; text-align:left; background:rgba(63,179,127,0.08); border:1px solid rgba(63,179,127,0.4);
+0238 border-radius:8px; padding:14px; font-family:'JetBrains Mono'; font-size:12px; color:var(--recovered);
+0239 }
+0240 .lead-ticket b{ display:block; color:var(--paper); font-family:'Archivo'; font-size:12.5px; margin-bottom:6px; }
+0241
+0242
+0243 /* ===== INDUSTRY EDITIONS ===== */
+0244 .industry-cards{ display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
+0245 .industry-card{
+0246 background:var(--surface); border:1px solid var(--line); border-radius:6px;
+0247 padding:28px; display:flex; flex-direction:column; min-height:320px;
+0248 transition:transform .15s ease,border-color .15s ease;
+0249 }
+0250 .industry-card:hover{ transform:translateY(-3px); border-color:var(--safety); }
+0251 .industry-card:last-child{ grid-column:1/-1; min-height:auto; }
+0252 .industry-icon{ font-size:27px; margin-bottom:18px; }
+0253 .industry-card h3{ font-size:18px; margin-bottom:12px; }
+0254 .industry-card p{ max-width:none; font-size:13.5px; margin-bottom:20px; }
+LEAD 
+0255 .industry-example{
+0256 margin-top:auto; background:var(--asphalt); border-left:2px solid var(--recovered);
+0257 padding:12px 14px; color:var(--paper-dim); font-family:'JetBrains Mono';
+0258 font-size:11px; line-height:1.55;
+0259 }
+0260 .industry-example b{ display:block; color:var(--recovered); margin-bottom:4px; font-size:10px; }
+0261 .industry-link{
+0262 display:inline-block; margin-top:18px; color:var(--safety); text-decoration:none;
+0263 font-size:12px; font-weight:700; text-transform:uppercase;
+0264 }
+0265
+0266 @media (max-width:900px){
+0267 .lead-grid{ grid-template-columns:1fr; }
+0268 .industry-cards{ grid-template-columns:1fr; }
+0269 .industry-card:last-child{ grid-column:auto; }
+0270 .field-row{ grid-template-columns:1fr; }
+0271 nav ul{ display:none; }
+0272 .hero-grid, .problem .wrap, .industries .wrap{ grid-template-columns:1fr; }
+0273 .plans{ grid-template-columns:1fr; }
+0274 .flow-step{ flex:1 1 100%; }
+0275 section{ padding:70px 0; }
+0276 }
+0277 </style>
+0278 </head>
+0279 <body>
+0280
+0281 <nav>
+0282 <div class="wrap">
+0283 <div class="logo"><span class="dot"></span>LEAD RESCUE <span style="color:var(--safety)">AI</span></div>
+0284 <ul>
+0285 <li><a href="#how">How it Works</a></li>
+0286 <li><a href="#pricing">Pricing</a></li>
+0287 <li><a href="#industries">Industries</a></li>
+0288 </ul>
+0289 <a href="#demo" class="btn">See a Live Demo</a>
+0290 </div>
+0291 </nav>
+0292
+0293 <div class="stripe"></div>
+0294
+0295 <header class="hero">
+0296 <div class="wrap hero-grid">
+0297 <div>
+0298 <span class="eyebrow">// Lead Recovery for Service Businesses</span>
+0299 <h1>Stop losing customers<br>when you miss <span>the phone.</span></h1>
+0300 <p class="lede">You already paid to generate the lead. Lead Rescue AI automatically responds, qualifies, follows up, and helps move
+missed callers and inquiries toward a booking before they choose a competitor.</p>
+0301 <div class="hero-ctas">
+0302 <a href="#demo" class="btn">Watch the Recovery Happen →</a>
+0303 <a href="#pricing" class="btn btn-ghost">View Pricing</a>
+0304 </div>
+0305 <div class="hero-stats">
+0306 <div><b>&lt;10 sec</b><span>Response after missed call</span></div>
+0307 <div><b>24/7</b><span>Coverage, no extra staff</span></div>
+0308 <div><b>0</b><span>Leads left on the table</span></div>
+0309 </div>
+0310 </div>
+0311
+0312 <div class="phone-stage" id="demo">
+0313 <div class="phone">
+0314 <div class="phone-notch"></div>
+0315 <div class="phone-head">
+0316 <div class="phone-avatar"></div>
+0317 <div>
+0318 <b>Gulf Coast Roofing</b>
+LEAD 
+0319 <span>Automated assistant</span>
+0320 </div>
+0321 <span class="phone-status" id="phoneStatus">missed call</span>
+0322 </div>
+0323 <div class="thread" id="thread"></div>
+0324 </div>
+0325 <div class="replay" id="replayBtn">■ replay recovery</div>
+0326 </div>
+0327 </div>
+0328 </header>
+0329
+0330 <div class="stripe"></div>
+0331
+0332 <section class="problem">
+0333 <div class="wrap">
+0334 <div>
+0335 <span class="eyebrow">// The Problem</span>
+0336 <h2>Every unanswered inquiry can become a lead handed to your competitor.</h2>
+0337 <p>A homeowner finds a leak, calls three roofers, and books whoever answers first. It's rarely about who's better — it's about who
+responded. Speed decides the sale before the estimate ever happens.</p>
+0338 </div>
+0339 <div class="call-race">
+0340 <div class="call-step bad">
+0341 <div class="tag">1</div>
+0342 <div><h4>Homeowner calls Company A</h4><p>Crew is on a roof. Nobody picks up.</p></div>
+0343 </div>
+0344 <div class="call-step bad">
+0345 <div class="tag">2</div>
+0346 <div><h4>No response for 20+ minutes</h4><p>The ad spend that generated the call is now wasted.</p></div>
+0347 </div>
+0348 <div class="call-step bad">
+0349 <div class="tag">3</div>
+0350 <div><h4>Homeowner calls Company B</h4><p>Same job. Different contractor. Lost margin.</p></div>
+0351 </div>
+0352 <div class="call-step good">
+0353 <div class="tag">✓</div>
+0354 <div><h4>With Lead Rescue AI installed</h4><p>The missed call triggers an instant text, qualifies the job, and books the estimate —
+automatically.</p></div>
+0355 </div>
+0356 </div>
+0357 </div>
+0358 </section>
+0359
+0360 <section class="how" id="how">
+0361 <div class="wrap">
+0362 <div class="how-head">
+0363 <span class="eyebrow">// How It Works</span>
+0364 <h2>One missed call. Eight automated steps. Zero lost opportunity.</h2>
+0365 </div>
+0366 <div class="flow">
+0367 <div class="flow-step"><span class="n">01</span><h4>Call comes in</h4><p>A prospect calls your business line.</p></div>
+0368 <div class="flow-step"><span class="n">02</span><h4>Call goes unanswered</h4><p>Crew's on a roof, on a job, or off the
+clock.</p></div>
+0369 0370 0371 0372 <div class="flow-step"><span class="n">03</span><h4>Instant text-back</h4><p>Lead Rescue texts the caller in seconds.</p></div>
+<div class="flow-step"><span class="n">04</span><h4>Prospect replies</h4><p>They engage instead of calling the next company.</p></div>
+<div class="flow-step"><span class="n">05</span><h4>Qualification</h4><p>Approved questions collect the details you need.</p></div>
+<div class="flow-step"><span class="n">06</span><h4>Info recorded</h4><p>Name, address, urgency, service — logged
+automatically.</p></div>
+0373 <div class="flow-step"><span class="n">07</span><h4>Appointment offered</h4><p>The prospect is moved toward a booked
+estimate.</p></div>
+0374 <div class="flow-step"><span class="n">08</span><h4>You get the lead</h4><p>A structured notification lands in your inbox.</p></div>
+0375 </div>
+0376 </div>
+0377 </section>
+0378
+LEAD RESCUE AI - COMPLETE HTML CODE 0379 <section class="pricing" id="pricing">
+0380 <div class="wrap">
+0381 <div class="pricing-head">
+0382 <span class="eyebrow">// Pricing</span>
+0383 <h2>Pick a package. We install everything.</h2>
+0384 <p>Every plan replaces the customer you're currently losing after hours — not just another software login.</p>
+0385 </div>
+0386 <div class="plans">
+0387 <div class="plan">
+0388 <h3>Starter</h3>
+0389 <div class="price">$299<span>/mo</span></div>
+0390 <div class="setup">$499 setup</div>
+0391 <ul>
+0392 <li>Missed-call text-back</li>
+0393 <li>Basic lead capture</li>
+0394 <li>Basic automated responses</li>
+0395 <li>Review requests</li>
+0396 <li>Monthly performance summary</li>
+0397 </ul>
+0398 <a href="#get-demo" class="btn btn-ghost">Get Started</a>
+0399 </div>
+0400 <div class="plan featured">
+0401 <h3>Growth</h3>
+0402 <div class="price">$599<span>/mo</span></div>
+0403 <div class="setup">$999 setup</div>
+0404 <ul>
+0405 <li>Missed-call recovery</li>
+0406 <li>AI-assisted conversations</li>
+0407 <li>Lead qualification</li>
+0408 <li>Website lead response</li>
+0409 <li>Appointment scheduling</li>
+0410 <li>Estimate follow-up + CRM pipeline</li>
+0411 </ul>
+0412 <a href="#get-demo" class="btn">Get Started</a>
+0413 </div>
+0414 <div class="plan">
+0415 <h3>Pro</h3>
+0416 <div class="price">$999<span>/mo</span></div>
+0417 <div class="setup">$1,500 setup</div>
+0418 <ul>
+0419 <li>Everything in Growth</li>
+0420 <li>Advanced workflows</li>
+0421 <li>Multiple campaigns</li>
+0422 <li>Old-lead reactivation</li>
+0423 <li>Multi-location support</li>
+0424 <li>Priority support</li>
+0425 </ul>
+0426 <a href="#get-demo" class="btn btn-ghost">Get Started</a>
+0427 </div>
+0428 </div>
+0429 </div>
+0430 </section>
+0431
+0432 <section class="industries" id="industries">
+0433 <div class="wrap" style="display:block">
+0434 <div style="max-width:720px;margin-bottom:42px">
+0435 <span class="eyebrow">// Built for Your Business</span>
+0436 <h2>One recovery system. Customized for how your industry sells.</h2>
+0437 <p>Lead Rescue AI adapts the follow-up conversation, qualification questions, and booking path to the type of customer your business
+serves.</p>
+0438 </div>
+0439
+0440 <div class="industry-cards">
+0441 <article class="industry-card">
+0442 <span class="industry-icon">■■</span>
+index
+LEAD 
+0443 <h3>Restaurants & Catering</h3>
+0444 <p>Respond to catering and private-event inquiries, capture event details, follow up on quotes, and reconnect with opted-in past
+customers.</p>
+0445 <div class="industry-example"><b>RECOVERY EXAMPLE</b>Catering inquiry → event details → quote follow-up → consultation request</div>
+0446 <a href="#get-demo" class="industry-link">Build My Restaurant Demo →</a>
+0447 </article>
+0448
+0449 <article class="industry-card">
+0450 <span class="industry-icon">■</span>
+0451 <h3>Auto Detailing</h3>
+0452 <p>Recover missed calls and quote requests for details, paint correction, ceramic coating, recurring service, and abandoned
+bookings.</p>
+0453 <div class="industry-example"><b>RECOVERY EXAMPLE</b>Missed coating inquiry → vehicle details → service qualification →
+booking</div>
+0454 <a href="#get-demo" class="industry-link">Build My Detailing Demo →</a>
+0455 </article>
+0456
+0457 <article class="industry-card">
+0458 <span class="industry-icon">■</span>
+0459 <h3>Land Clearing</h3>
+0460 <p>Capture acreage and property details, qualify the work requested, schedule site visits, follow up on estimates, and reactivate
+older leads.</p>
+0461 <div class="industry-example"><b>RECOVERY EXAMPLE</b>6-acre clearing lead → property address → job scope → estimate visit</div>
+0462 <a href="#get-demo" class="industry-link">Build My Land Clearing Demo →</a>
+0463 </article>
+0464
+0465 <article class="industry-card">
+0466 <span class="industry-icon">✂■</span>
+0467 <h3>Hair Salons</h3>
+0468 <p>Respond to appointment and consultation inquiries, recover missed calls, help fill cancellation openings, and support rebooking
+follow-up.</p>
+0469 <div class="industry-example"><b>RECOVERY EXAMPLE</b>Color inquiry → service details → consultation → appointment request</div>
+0470 <a href="#get-demo" class="industry-link">Build My Salon Demo →</a>
+0471 </article>
+0472
+0473 <article class="industry-card">
+0474 <span class="industry-icon">■</span>
+0475 <h3>Home Services & Trades</h3>
+0476 <p>Built for roofing, HVAC, plumbing, electrical, tree service, landscaping, remodeling, pressure washing, pest control, and
+more.</p>
+0477 <div class="industry-example"><b>RECOVERY EXAMPLE</b>Missed service call → urgency → address → estimate or appointment</div>
+0478 <a href="#get-demo" class="industry-link">Build My Service Demo →</a>
+0479 </article>
+0480 </div>
+0481 </div>
+0482 </section>
+0483
+0484 <div class="stripe"></div>
+0485
+0486 <section class="lead-section" id="get-demo">
+0487 <div class="wrap lead-grid">
+0488 <div class="lead-copy">
+0489 <span class="eyebrow">// Get Set Up</span>
+0490 <h2>Tell us about your business. We'll build the demo.</h2>
+0491 <p>Founding-client pilots start at $250 to implement, then $199–$299 for the first month before rolling onto a standard plan. No
+fabricated numbers — just your real missed calls, recovered.</p>
+0492 <div class="lead-note">Submissions are stored so our team can follow up — visible to anyone reviewing demo requests on this
+page.</div>
+0493 </div>
+0494
+0495 <div class="lead-card">
+0496 <div id="leadFormWrap">
+0497 <h3>Request Your Demo</h3>
+0498 <form id="leadForm">
+0499 <div class="field-row">
+LEAD 
+0500 <div class="field">
+0501 <label for="fName">Full name</label>
+0502 <input id="fName" type="text" required placeholder="Jordan Alvarez">
+0503 </div>
+0504 <div class="field">
+0505 <label for="fBiz">Business name</label>
+0506 <input id="fBiz" type="text" required placeholder="Gulf Coast Roofing">
+0507 </div>
+0508 </div>
+0509 <div class="field-row">
+0510 <div class="field">
+0511 <label for="fPhone">Phone</label>
+0512 <input id="fPhone" type="tel" required placeholder="(555) 555-0192">
+0513 </div>
+0514 <div class="field">
+0515 <label for="fEmail">Email</label>
+0516 <input id="fEmail" type="email" required placeholder="jordan@gulfcoastroofing.com">
+0517 </div>
+0518 </div>
+0519 <div class="field-row">
+0520 <div class="field">
+0521 <label for="fIndustry">Industry</label>
+0522 <select id="fIndustry">
+0523 <option>Roofing</option>
+0524 <option>Restaurants & Catering</option>
+0525 <option>Auto Detailing</option>
+0526 <option>Land Clearing</option>
+0527 <option>Hair Salon</option>
+0528 <option>HVAC</option>
+0529 <option>Plumbing</option>
+0530 <option>Electrical</option>
+0531 <option>Tree Service</option>
+0532 <option>Landscaping</option>
+0533 <option>Remodeling</option>
+0534 <option>Pressure Washing</option>
+0535 <option>Pest Control</option>
+0536 <option>Other Service Business</option>
+0537 </select>
+0538 </div>
+0539 <div class="field">
+0540 <label for="fMissed">Missed calls / week</label>
+0541 <select id="fMissed">
+0542 <option>1–5</option>
+0543 <option>6–15</option>
+0544 <option>16–30</option>
+0545 <option>30+</option>
+0546 <option>Not sure</option>
+0547 </select>
+0548 </div>
+0549 </div>
+0550 <button type="submit" class="btn submit-btn" id="leadSubmitBtn">Request My Demo →</button>
+0551 <div class="form-msg" id="leadMsg"></div>
+0552 </form>
+0553 </div>
+0554
+0555 <div class="lead-success" id="leadSuccess">
+0556 <div class="check">✓</div>
+0557 <h4>Request received</h4>
+0558 <p>We'll text and email you within one business day to schedule your live demo.</p>
+0559 <div class="lead-ticket" id="leadTicket"></div>
+0560 </div>
+0561 </div>
+0562 </div>
+0563 </section>
+0564
+LEAD 
+0565 <div class="stripe"></div>
+0566
+0567 <section class="cta">
+0568 <div class="wrap">
+0569 <span class="eyebrow">// Ready When You Are</span>
+0570 <h2>Let's see what your last missed call actually cost you.</h2>
+0571 <p>Get a demo built around your industry, your services, and the way your customers actually inquire and book.</p>
+0572 <a href="#get-demo" class="btn">Request A Demo →</a>
+0573 </div>
+0574 </section>
+0575
+0576 <footer>
+0577 <div class="wrap">
+0578 <span class="tag-line">© 2026 Lead Rescue AI — Every missed call deserves a second chance.</span>
+0579 <ul class="foot-links">
+0580 <li><a href="#how">How It Works</a></li>
+0581 <li><a href="#pricing">Pricing</a></li>
+0582 <li><a href="#">Privacy</a></li>
+0583 <li><a href="#">Terms</a></li>
+0584 </ul>
+0585 </div>
+0586 </footer>
+0587
+0588 <script>
+0589 const script = [
+0590 {who:'sys', text:"Hi! Sorry we missed your call. This is Gulf Coast Roofing's automated assistant. Are you looking for a repair,
+replacement, inspection, or something else?"},
+0591 0592 0593 0594 0596 0597 0598 {who:'cust', text:"My roof is leaking."},
+{who:'sys', text:"I can help get your info to the team right away. Is the leak currently active?"},
+{who:'cust', text:"Yes, it's dripping into the hallway."},
+{who:'sys', text:"Got it — that's urgent. What's the property address?"},
+0595 {who:'cust', text:"214 Magnolia St."},
+{who:'sys', text:"Thanks! I can get a crew out tomorrow morning. Does 9 AM work?"},
+{who:'cust', text:"9 AM works, thank you!"},
+{who:'card', title:'NEW ROOFING LEAD — NOTIFIED', text:"Name: J. Alvarez\nAddress: 214 Magnolia St\nService: Active leak repair\nUrgency:
+High\nStatus: Appointment booked, 9:00 AM"}
+0599 ];
+0600
+0601 const thread = document.getElementById('thread');
+0602 const statusEl = document.getElementById('phoneStatus');
+0603 const replayBtn = document.getElementById('replayBtn');
+0604 let playing = false;
+0605
+0606 function bubbleEl(step){
+0607 const el = document.createElement('div');
+0608 if(step.who === 'card'){
+0609 el.className = 'bubble card';
+0610 el.innerHTML = `<b>${step.title}</b>${step.text.replace(/\\n/g,'<br>')}`;
+0611 } else {
+0612 el.className = 'bubble ' + step.who;
+0613 el.textContent = step.text;
+0614 }
+0615 return el;
+0616 }
+0617
+0618 async function playDemo(){
+0619 if(playing) return;
+0620 playing = true;
+0621 thread.innerHTML = '';
+0622 statusEl.textContent = 'missed call';
+0623 statusEl.classList.remove('recovered');
+0624
+0625 for(let i = 0; i < script.length; i++){
+0626 await new Promise(r => setTimeout(r, i === 0 ? 900 : 1250));
+0627 const el = bubbleEl(script[i]);
 
-async function playDemo(){
-  if(playing) return;
-  playing = true;
-  thread.innerHTML = '';
-  statusEl.textContent = 'missed call';
-  statusEl.classList.remove('recovered');
-
-  for(let i = 0; i < script.length; i++){
-    await new Promise(r => setTimeout(r, i === 0 ? 900 : 1250));
-    const el = bubbleEl(script[i]);
-    thread.appendChild(el);
-    thread.scrollTop = thread.scrollHeight;
-    if(script[i].who === 'card'){
-      statusEl.textContent = 'lead recovered';
-      statusEl.classList.add('recovered');
-    }
-  }
-  playing = false;
-  setTimeout(() => { if(!playing) playDemo(); }, 4200);
-}
-
-replayBtn.addEventListener('click', () => { playing = false; playDemo(); });
-window.addEventListener('load', playDemo);
-
-// ===== Lead capture form =====
-const leadForm = document.getElementById('leadForm');
-const leadSubmitBtn = document.getElementById('leadSubmitBtn');
-const leadMsg = document.getElementById('leadMsg');
-const leadFormWrap = document.getElementById('leadFormWrap');
-const leadSuccess = document.getElementById('leadSuccess');
-const leadTicket = document.getElementById('leadTicket');
-
-leadForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  leadMsg.className = 'form-msg';
-  leadSubmitBtn.disabled = true;
-  leadSubmitBtn.textContent = 'Sending…';
-
-  const lead = {
-    name: document.getElementById('fName').value.trim(),
-    business: document.getElementById('fBiz').value.trim(),
-    phone: document.getElementById('fPhone').value.trim(),
-    email: document.getElementById('fEmail').value.trim(),
-    industry: document.getElementById('fIndustry').value,
-    missedCallsPerWeek: document.getElementById('fMissed').value,
-    submittedAt: new Date().toISOString()
-  };
-
-  try{
-    const key = 'leads:' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
-    const result = await window.storage.set(key, JSON.stringify(lead), true);
-    if(!result){ throw new Error('Storage returned no result'); }
-
-    leadFormWrap.style.display = 'none';
-    leadSuccess.classList.add('show');
-    leadTicket.innerHTML = `<b>DEMO REQUEST — LOGGED</b>Business: ${lead.business}<br>Contact: ${lead.name}<br>Industry: ${lead.industry}<br>Missed calls/wk: ${lead.missedCallsPerWeek}`;
-  } catch(err){
-    leadMsg.textContent = "Something went wrong saving your request — please try again.";
-    leadMsg.classList.add('show','err');
-    leadSubmitBtn.disabled = false;
-    leadSubmitBtn.textContent = 'Request My Demo →';
-  }
-});
-</script>
-
-</body>
-</html>
+0628 thread.appendChild(el);
+0629 thread.scrollTop = thread.scrollHeight;
+0630 if(script[i].who === 'card'){
+0631 statusEl.textContent = 'lead recovered';
+0632 statusEl.classList.add('recovered');
+0633 }
+0634 }
+0635 playing = false;
+0636 setTimeout(() => { if(!playing) playDemo(); }, 4200);
+0637 }
+0638
+0639 replayBtn.addEventListener('click', () => { playing = false; playDemo(); });
+0640 window.addEventListener('load', playDemo);
+0641
+0642 // ===== Lead capture form =====
+0643 const leadForm = document.getElementById('leadForm');
+0644 const leadSubmitBtn = document.getElementById('leadSubmitBtn');
+0645 const leadMsg = document.getElementById('leadMsg');
+0646 const leadFormWrap = document.getElementById('leadFormWrap');
+0647 const leadSuccess = document.getElementById('leadSuccess');
+0648 const leadTicket = document.getElementById('leadTicket');
+0649
+0650 leadForm.addEventListener('submit', async (e) => {
+0651 e.preventDefault();
+0652 leadMsg.className = 'form-msg';
+0653 leadSubmitBtn.disabled = true;
+0654 leadSubmitBtn.textContent = 'Sending…';
+0655
+0656 const lead = {
+0657 name: document.getElementById('fName').value.trim(),
+0658 business: document.getElementById('fBiz').value.trim(),
+0659 phone: document.getElementById('fPhone').value.trim(),
+0660 email: document.getElementById('fEmail').value.trim(),
+0661 industry: document.getElementById('fIndustry').value,
+0662 missedCallsPerWeek: document.getElementById('fMissed').value,
+0663 submittedAt: new Date().toISOString()
+0664 };
+0665
+0666 try{
+0667 0668 0669 const key = 'leads:' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
+const result = await window.storage.set(key, JSON.stringify(lead), true);
+if(!result){ throw new Error('Storage returned no result'); }
+0670
+0671 leadFormWrap.style.display = 'none';
+0672 leadSuccess.classList.add('show');
+0673 leadTicket.innerHTML = `<b>DEMO REQUEST — LOGGED</b>Business: ${lead.business}<br>Contact: ${lead.name}<br>Industry:
+${lead.industry}<br>Missed calls/wk: ${lead.missedCallsPerWeek}`;
+0674 } catch(err){
+0675 leadMsg.textContent = "Something went wrong saving your request — please try again.";
+0676 leadMsg.classList.add('show','err');
+0677 leadSubmitBtn.disabled = false;
+0678 leadSubmitBtn.textContent = 'Request My Demo →';
+0679 }
+0680 });
+0681 </script>
+0682
+0683 </body>
+0684 </html>
