@@ -495,31 +495,36 @@
     <div class="lead-card">
       <div id="leadFormWrap">
         <h3>Request Your Demo</h3>
-        <form id="leadForm">
+        <form id="leadForm" action="https://formsubmit.co/messy_marvin@icloud.com" method="POST">
+          <input type="hidden" name="_subject" value="New Lead Rescue Demo Request">
+          <input type="hidden" name="_template" value="table">
+          <input type="hidden" name="_next" value="https://lead-rescue-mdxd.onrender.com/?submitted=true#get-demo">
+          <input type="hidden" name="_url" value="https://lead-rescue-mdxd.onrender.com/">
+          <input type="text" name="_honey" style="display:none">
           <div class="field-row">
             <div class="field">
               <label for="fName">Full name</label>
-              <input id="fName" type="text" required placeholder="Jordan Alvarez">
+              <input id="fName" name="name" type="text" required placeholder="Jordan Alvarez">
             </div>
             <div class="field">
               <label for="fBiz">Business name</label>
-              <input id="fBiz" type="text" required placeholder="Gulf Coast Roofing">
+              <input id="fBiz" name="business" type="text" required placeholder="Gulf Coast Roofing">
             </div>
           </div>
           <div class="field-row">
             <div class="field">
               <label for="fPhone">Phone</label>
-              <input id="fPhone" type="tel" required placeholder="(555) 555-0192">
+              <input id="fPhone" name="phone" type="tel" required placeholder="(555) 555-0192">
             </div>
             <div class="field">
               <label for="fEmail">Email</label>
-              <input id="fEmail" type="email" required placeholder="jordan@gulfcoastroofing.com">
+              <input id="fEmail" name="email" type="email" required placeholder="jordan@gulfcoastroofing.com">
             </div>
           </div>
           <div class="field-row">
             <div class="field">
               <label for="fIndustry">Industry</label>
-              <select id="fIndustry">
+              <select id="fIndustry" name="industry">
                 <option>Roofing</option>
                 <option>Restaurants & Catering</option>
                 <option>Auto Detailing</option>
@@ -538,7 +543,7 @@
             </div>
             <div class="field">
               <label for="fMissed">Missed calls / week</label>
-              <select id="fMissed">
+              <select id="fMissed" name="missed_calls_per_week">
                 <option>1–5</option>
                 <option>6–15</option>
                 <option>16–30</option>
@@ -647,37 +652,16 @@ const leadFormWrap = document.getElementById('leadFormWrap');
 const leadSuccess = document.getElementById('leadSuccess');
 const leadTicket = document.getElementById('leadTicket');
 
-leadForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  leadMsg.className = 'form-msg';
+leadForm.addEventListener('submit', () => {
   leadSubmitBtn.disabled = true;
   leadSubmitBtn.textContent = 'Sending…';
-
-  const lead = {
-    name: document.getElementById('fName').value.trim(),
-    business: document.getElementById('fBiz').value.trim(),
-    phone: document.getElementById('fPhone').value.trim(),
-    email: document.getElementById('fEmail').value.trim(),
-    industry: document.getElementById('fIndustry').value,
-    missedCallsPerWeek: document.getElementById('fMissed').value,
-    submittedAt: new Date().toISOString()
-  };
-
-  try{
-    const key = 'leads:' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
-    const result = await window.storage.set(key, JSON.stringify(lead), true);
-    if(!result){ throw new Error('Storage returned no result'); }
-
-    leadFormWrap.style.display = 'none';
-    leadSuccess.classList.add('show');
-    leadTicket.innerHTML = `<b>DEMO REQUEST — LOGGED</b>Business: ${lead.business}<br>Contact: ${lead.name}<br>Industry: ${lead.industry}<br>Missed calls/wk: ${lead.missedCallsPerWeek}`;
-  } catch(err){
-    leadMsg.textContent = "Something went wrong saving your request — please try again.";
-    leadMsg.classList.add('show','err');
-    leadSubmitBtn.disabled = false;
-    leadSubmitBtn.textContent = 'Request My Demo →';
-  }
 });
+
+if(new URLSearchParams(window.location.search).get('submitted') === 'true'){
+  leadFormWrap.style.display = 'none';
+  leadSuccess.classList.add('show');
+  leadTicket.innerHTML = '<b>DEMO REQUEST — SENT</b>Your information was delivered to the Lead Rescue team.';
+}
 </script>
 
 </body>
