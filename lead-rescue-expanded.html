@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lead Rescue AI — Stop Losing Customers When You Miss the Phone</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root{
+    --asphalt:#14171a;
+    --asphalt-2:#1c2023;
+    --surface:#20252a;
+    --line:#33393f;
+    --paper:#e9e6df;
+    --paper-dim:#a7adaf;
+    --signal:#ff5a33;      /* missed-call / alert */
+    --safety:#f5b400;      /* caution / brand accent */
+    --recovered:#3fb37f;   /* success / recovered lead */
+    --muted:#7c848b;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--asphalt);
+    color:var(--paper);
+    font-family:'Archivo', sans-serif;
+    line-height:1.5;
+    overflow-x:hidden;
+  }
+  ::selection{ background:var(--safety); color:var(--asphalt); }
+
+  h1,h2,h3{ font-family:'Archivo Black', sans-serif; text-transform:uppercase; letter-spacing:-0.01em; }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    font-size:12px;
+    color:var(--safety);
+    font-weight:600;
+  }
+  .mono{ font-family:'JetBrains Mono', monospace; }
+  a{ color:inherit; }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 32px; }
+  section{ position:relative; padding:110px 0; }
+
+  /* ===== hazard-stripe divider ===== */
+  .stripe{
+    height:10px;
+    background:repeating-linear-gradient(135deg, var(--safety) 0 18px, var(--asphalt) 18px 36px);
+    opacity:0.9;
+  }
+
+  /* ===== NAV ===== */
+  nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(20,23,26,0.92);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  nav .wrap{ display:flex; align-items:center; justify-content:space-between; padding:18px 32px; }
+  .logo{ display:flex; align-items:center; gap:10px; font-family:'Archivo Black'; font-size:18px; letter-spacing:-0.02em; }
+  .logo .dot{ width:10px; height:10px; background:var(--signal); border-radius:50%; box-shadow:0 0 0 4px rgba(255,90,51,0.18); animation:pulse 1.8s infinite; }
+  @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 4px rgba(255,90,51,0.18);} 50%{ box-shadow:0 0 0 8px rgba(255,90,51,0.05);} }
+  nav ul{ list-style:none; display:flex; gap:34px; font-size:14px; font-weight:600; }
+  nav ul a{ text-decoration:none; color:var(--paper-dim); transition:color .15s; }
+  nav ul a:hover{ color:var(--safety); }
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--safety); color:var(--asphalt);
+    font-weight:700; text-transform:uppercase; letter-spacing:0.03em; font-size:13px;
+    padding:12px 22px; border-radius:3px; text-decoration:none; border:none; cursor:pointer;
+    transition:transform .15s ease, background .15s ease;
+  }
+  .btn:hover{ transform:translateY(-2px); background:#ffc934; }
+  .btn-ghost{
+    background:transparent; color:var(--paper); border:1px solid var(--line);
+  }
+  .btn-ghost:hover{ border-color:var(--safety); color:var(--safety); background:transparent; }
+
+  /* ===== HERO ===== */
+  .hero{ padding:90px 0 70px; }
+  .hero-grid{ display:grid; grid-template-columns:1.05fr 0.95fr; gap:64px; align-items:center; }
+  .hero h1{ font-size:clamp(38px,5vw,60px); line-height:0.98; margin:18px 0 22px; }
+  .hero h1 span{ color:var(--safety); }
+  .hero p.lede{ font-size:18px; color:var(--paper-dim); max-width:480px; margin-bottom:32px; }
+  .hero-ctas{ display:flex; gap:14px; margin-bottom:36px; flex-wrap:wrap; }
+  .hero-stats{ display:flex; gap:34px; border-top:1px solid var(--line); padding-top:22px; }
+  .hero-stats div b{ font-family:'Archivo Black'; font-size:22px; display:block; color:var(--safety); }
+  .hero-stats div span{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; }
+
+  /* ===== PHONE DEMO — the signature element ===== */
+  .phone-stage{ position:relative; display:flex; justify-content:center; }
+  .phone{
+    width:320px; background:var(--asphalt-2); border:1px solid var(--line);
+    border-radius:34px; padding:14px; box-shadow:0 40px 80px -20px rgba(0,0,0,0.6);
+  }
+  .phone-notch{ width:70px; height:5px; background:var(--line); border-radius:3px; margin:0 auto 10px; }
+  .phone-head{
+    display:flex; align-items:center; gap:10px; padding:6px 10px 14px; border-bottom:1px solid var(--line); margin-bottom:12px;
+  }
+  .phone-avatar{ width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--safety),var(--signal)); flex-shrink:0; }
+  .phone-head b{ font-size:14px; display:block; }
+  .phone-head span{ font-size:11px; color:var(--muted); }
+  .phone-status{
+    margin-left:auto; font-family:'JetBrains Mono'; font-size:10px; padding:3px 8px; border-radius:20px;
+    background:rgba(255,90,51,0.15); color:var(--signal); border:1px solid rgba(255,90,51,0.4);
+    text-transform:uppercase; letter-spacing:.05em;
+  }
+  .phone-status.recovered{ background:rgba(63,179,127,0.15); color:var(--recovered); border-color:rgba(63,179,127,0.4); }
+  .thread{ height:340px; overflow:hidden; display:flex; flex-direction:column; gap:9px; padding:2px 2px 4px; }
+  .bubble{
+    max-width:82%; padding:9px 13px; border-radius:14px; font-size:12.5px; line-height:1.4;
+    opacity:0; transform:translateY(8px); animation:rise .35s ease forwards;
+  }
+  @keyframes rise{ to{ opacity:1; transform:translateY(0);} }
+  .bubble.sys{ align-self:flex-start; background:var(--surface); border:1px solid var(--line); border-bottom-left-radius:3px; }
+  .bubble.cust{ align-self:flex-end; background:var(--safety); color:var(--asphalt); font-weight:600; border-bottom-right-radius:3px; }
+  .bubble.card{
+    align-self:stretch; background:rgba(63,179,127,0.1); border:1px solid rgba(63,179,127,0.45);
+    border-radius:10px; padding:10px 12px; font-family:'JetBrains Mono'; font-size:11px; color:var(--recovered);
+  }
+  .bubble.card b{ display:block; color:var(--paper); font-family:'Archivo'; font-size:12.5px; margin-bottom:4px; }
+  .replay{
+    position:absolute; bottom:-18px; left:50%; transform:translateX(-50%);
+    font-family:'JetBrains Mono'; font-size:11px; color:var(--muted); background:var(--asphalt);
+    padding:4px 12px; border:1px solid var(--line); border-radius:20px; cursor:pointer;
+  }
+  .replay:hover{ color:var(--safety); border-color:var(--safety); }
+
+  /* ===== PROBLEM ===== */
+  .problem .wrap{ display:grid; grid-template-columns:0.9fr 1.1fr; gap:60px; align-items:start; }
+  .problem h2{ font-size:clamp(28px,3.4vw,40px); line-height:1.05; margin:14px 0 20px; }
+  .problem p{ color:var(--paper-dim); max-width:420px; }
+  .call-race{ display:flex; flex-direction:column; gap:0; }
+  .call-step{ display:flex; gap:18px; padding:20px 0; border-bottom:1px solid var(--line); }
+  .call-step:last-child{ border-bottom:none; }
+  .call-step .tag{
+    font-family:'JetBrains Mono'; font-size:11px; color:var(--asphalt); background:var(--paper-dim);
+    width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius:50%; flex-shrink:0; font-weight:700;
+  }
+  .call-step.bad .tag{ background:var(--signal); color:#fff; }
+  .call-step.good .tag{ background:var(--recovered); color:#fff; }
+  .call-step h4{ font-size:15px; margin-bottom:4px; text-transform:none; font-family:'Archivo'; font-weight:700; }
+  .call-step p{ font-size:13.5px; color:var(--muted); margin:0; max-width:none; }
+
+  /* ===== HOW IT WORKS ===== */
+  .how{ background:var(--asphalt-2); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .how-head{ max-width:560px; margin-bottom:56px; }
+  .how-head h2{ font-size:clamp(28px,3.4vw,40px); margin:14px 0 16px; }
+  .flow{ display:flex; flex-wrap:wrap; gap:0; counter-reset:step; }
+  .flow-step{
+    flex:1 1 220px; padding:26px 22px; border:1px solid var(--line); background:var(--surface);
+    position:relative; margin:-1px 0 0 -1px;
+  }
+  .flow-step .n{ font-family:'JetBrains Mono'; font-size:12px; color:var(--safety); display:block; margin-bottom:10px; }
+  .flow-step h4{ font-size:14.5px; text-transform:none; font-family:'Archivo'; font-weight:700; margin-bottom:6px; }
+  .flow-step p{ font-size:12.5px; color:var(--muted); }
+
+  /* ===== PRICING ===== */
+  .pricing-head{ text-align:center; max-width:600px; margin:0 auto 56px; }
+  .pricing-head h2{ font-size:clamp(28px,3.4vw,40px); margin:14px 0 16px; }
+  .pricing-head p{ color:var(--paper-dim); }
+  .plans{ display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
+  .plan{
+    background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:32px 26px;
+    display:flex; flex-direction:column; gap:18px; position:relative;
+  }
+  .plan.featured{ border-color:var(--safety); box-shadow:0 0 0 1px var(--safety), 0 30px 60px -30px rgba(245,180,0,0.25); }
+  .plan.featured::before{
+    content:'MOST INSTALLED'; position:absolute; top:-12px; left:26px; background:var(--safety); color:var(--asphalt);
+    font-family:'JetBrains Mono'; font-size:10px; font-weight:700; padding:4px 10px; border-radius:3px; letter-spacing:.05em;
+  }
+  .plan h3{ font-size:18px; letter-spacing:0.02em; }
+  .plan .price{ font-family:'Archivo Black'; font-size:40px; }
+  .plan .price span{ font-family:'Archivo'; font-size:14px; color:var(--muted); text-transform:none; font-weight:400; }
+  .plan .setup{ font-family:'JetBrains Mono'; font-size:12px; color:var(--muted); }
+  .plan ul{ list-style:none; display:flex; flex-direction:column; gap:10px; font-size:13.5px; color:var(--paper-dim); }
+  .plan li::before{ content:'—'; color:var(--safety); margin-right:8px; }
+  .plan .btn{ margin-top:auto; text-align:center; justify-content:center; }
+
+  /* ===== INDUSTRIES ===== */
+  .industries .wrap{ display:grid; grid-template-columns:0.8fr 1.2fr; gap:60px; align-items:center; }
+  .industries h2{ font-size:clamp(28px,3.4vw,40px); margin:14px 0 16px; }
+  .industries p{ color:var(--paper-dim); max-width:420px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:10px; }
+  .chip{
+    font-family:'JetBrains Mono'; font-size:12.5px; padding:9px 16px; border:1px solid var(--line); border-radius:20px;
+    color:var(--paper-dim); transition:.15s;
+  }
+  .chip.now{ border-color:var(--safety); color:var(--safety); background:rgba(245,180,0,0.08); }
+  .chip:hover{ border-color:var(--paper-dim); color:var(--paper); }
+
+  /* ===== CTA ===== */
+  .cta{ text-align:center; }
+  .cta h2{ font-size:clamp(30px,4.4vw,52px); max-width:760px; margin:0 auto 20px; line-height:1.05; }
+  .cta p{ color:var(--paper-dim); max-width:480px; margin:0 auto 34px; }
+  .cta .btn{ font-size:15px; padding:16px 30px; }
+
+  footer{ border-top:1px solid var(--line); padding:44px 0; }
+  footer .wrap{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
+  footer .foot-links{ display:flex; gap:24px; list-style:none; font-size:13px; color:var(--muted); }
+  footer .foot-links a{ text-decoration:none; }
+  footer .foot-links a:hover{ color:var(--safety); }
+  footer .tag-line{ font-family:'JetBrains Mono'; font-size:12px; color:var(--muted); }
+
+  /* ===== LEAD FORM ===== */
+  .lead-section{ background:var(--asphalt-2); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .lead-grid{ display:grid; grid-template-columns:0.85fr 1.15fr; gap:60px; align-items:flex-start; }
+  .lead-copy h2{ font-size:clamp(28px,3.4vw,40px); margin:14px 0 16px; }
+  .lead-copy p{ color:var(--paper-dim); max-width:400px; margin-bottom:26px; }
+  .lead-note{ display:flex; gap:10px; font-size:12px; color:var(--muted); border-left:2px solid var(--safety); padding-left:12px; max-width:380px; }
+  .lead-card{ background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:30px; }
+  .lead-card h3{ font-size:14px; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:20px; font-family:'Archivo'; font-weight:700; }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+  .field label{ font-family:'JetBrains Mono'; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; }
+  .field input, .field select{
+    background:var(--asphalt); border:1px solid var(--line); color:var(--paper);
+    padding:11px 12px; border-radius:4px; font-family:'Archivo'; font-size:14px; outline:none;
+    transition:border-color .15s;
+  }
+  .field input:focus, .field select:focus{ border-color:var(--safety); }
+  .field-row .field{ margin-bottom:0; }
+  .submit-btn{ width:100%; justify-content:center; font-size:14px; padding:14px; margin-top:4px; }
+  .submit-btn:disabled{ opacity:0.6; cursor:not-allowed; transform:none; }
+  .form-msg{ font-family:'JetBrains Mono'; font-size:12px; margin-top:14px; display:none; }
+  .form-msg.show{ display:block; }
+  .form-msg.err{ color:var(--signal); }
+  .lead-success{ display:none; text-align:center; padding:20px 4px; }
+  .lead-success.show{ display:block; }
+  .lead-success .check{ width:44px; height:44px; border-radius:50%; background:rgba(63,179,127,0.15); border:1px solid var(--recovered); color:var(--recovered); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:20px; }
+  .lead-success h4{ font-family:'Archivo'; font-size:16px; margin-bottom:6px; }
+  .lead-success p{ color:var(--muted); font-size:13px; }
+  .lead-ticket{
+    margin-top:18px; text-align:left; background:rgba(63,179,127,0.08); border:1px solid rgba(63,179,127,0.4);
+    border-radius:8px; padding:14px; font-family:'JetBrains Mono'; font-size:12px; color:var(--recovered);
+  }
+  .lead-ticket b{ display:block; color:var(--paper); font-family:'Archivo'; font-size:12.5px; margin-bottom:6px; }
+
+
+  /* ===== INDUSTRY EDITIONS ===== */
+  .industry-cards{ display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
+  .industry-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:6px;
+    padding:28px; display:flex; flex-direction:column; min-height:320px;
+    transition:transform .15s ease,border-color .15s ease;
+  }
+  .industry-card:hover{ transform:translateY(-3px); border-color:var(--safety); }
+  .industry-card:last-child{ grid-column:1/-1; min-height:auto; }
+  .industry-icon{ font-size:27px; margin-bottom:18px; }
+  .industry-card h3{ font-size:18px; margin-bottom:12px; }
+  .industry-card p{ max-width:none; font-size:13.5px; margin-bottom:20px; }
+  .industry-example{
+    margin-top:auto; background:var(--asphalt); border-left:2px solid var(--recovered);
+    padding:12px 14px; color:var(--paper-dim); font-family:'JetBrains Mono';
+    font-size:11px; line-height:1.55;
+  }
+  .industry-example b{ display:block; color:var(--recovered); margin-bottom:4px; font-size:10px; }
+  .industry-link{
+    display:inline-block; margin-top:18px; color:var(--safety); text-decoration:none;
+    font-size:12px; font-weight:700; text-transform:uppercase;
+  }
+
+  @media (max-width:900px){
+    .lead-grid{ grid-template-columns:1fr; }
+    .industry-cards{ grid-template-columns:1fr; }
+    .industry-card:last-child{ grid-column:auto; }
+    .field-row{ grid-template-columns:1fr; }
+    nav ul{ display:none; }
+    .hero-grid, .problem .wrap, .industries .wrap{ grid-template-columns:1fr; }
+    .plans{ grid-template-columns:1fr; }
+    .flow-step{ flex:1 1 100%; }
+    section{ padding:70px 0; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="logo"><span class="dot"></span>LEAD RESCUE <span style="color:var(--safety)">AI</span></div>
+    <ul>
+      <li><a href="#how">How it Works</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#industries">Industries</a></li>
+    </ul>
+    <a href="#demo" class="btn">See a Live Demo</a>
+  </div>
+</nav>
+
+<div class="stripe"></div>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">// Lead Recovery for Service Businesses</span>
+      <h1>Stop losing customers<br>when you miss <span>the phone.</span></h1>
+      <p class="lede">You already paid to generate the lead. Lead Rescue AI automatically responds, qualifies, follows up, and helps move missed callers and inquiries toward a booking before they choose a competitor.</p>
+      <div class="hero-ctas">
+        <a href="#demo" class="btn">Watch the Recovery Happen →</a>
+        <a href="#pricing" class="btn btn-ghost">View Pricing</a>
+      </div>
+      <div class="hero-stats">
+        <div><b>&lt;10 sec</b><span>Response after missed call</span></div>
+        <div><b>24/7</b><span>Coverage, no extra staff</span></div>
+        <div><b>0</b><span>Leads left on the table</span></div>
+      </div>
+    </div>
+
+    <div class="phone-stage" id="demo">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-head">
+          <div class="phone-avatar"></div>
+          <div>
+            <b>Gulf Coast Roofing</b>
+            <span>Automated assistant</span>
+          </div>
+          <span class="phone-status" id="phoneStatus">missed call</span>
+        </div>
+        <div class="thread" id="thread"></div>
+      </div>
+      <div class="replay" id="replayBtn">↺ replay recovery</div>
+    </div>
+  </div>
+</header>
+
+<div class="stripe"></div>
+
+<section class="problem">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">// The Problem</span>
+      <h2>Every unanswered inquiry can become a lead handed to your competitor.</h2>
+      <p>A homeowner finds a leak, calls three roofers, and books whoever answers first. It's rarely about who's better — it's about who responded. Speed decides the sale before the estimate ever happens.</p>
+    </div>
+    <div class="call-race">
+      <div class="call-step bad">
+        <div class="tag">1</div>
+        <div><h4>Homeowner calls Company A</h4><p>Crew is on a roof. Nobody picks up.</p></div>
+      </div>
+      <div class="call-step bad">
+        <div class="tag">2</div>
+        <div><h4>No response for 20+ minutes</h4><p>The ad spend that generated the call is now wasted.</p></div>
+      </div>
+      <div class="call-step bad">
+        <div class="tag">3</div>
+        <div><h4>Homeowner calls Company B</h4><p>Same job. Different contractor. Lost margin.</p></div>
+      </div>
+      <div class="call-step good">
+        <div class="tag">✓</div>
+        <div><h4>With Lead Rescue AI installed</h4><p>The missed call triggers an instant text, qualifies the job, and books the estimate — automatically.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="how" id="how">
+  <div class="wrap">
+    <div class="how-head">
+      <span class="eyebrow">// How It Works</span>
+      <h2>One missed call. Eight automated steps. Zero lost opportunity.</h2>
+    </div>
+    <div class="flow">
+      <div class="flow-step"><span class="n">01</span><h4>Call comes in</h4><p>A prospect calls your business line.</p></div>
+      <div class="flow-step"><span class="n">02</span><h4>Call goes unanswered</h4><p>Crew's on a roof, on a job, or off the clock.</p></div>
+      <div class="flow-step"><span class="n">03</span><h4>Instant text-back</h4><p>Lead Rescue texts the caller in seconds.</p></div>
+      <div class="flow-step"><span class="n">04</span><h4>Prospect replies</h4><p>They engage instead of calling the next company.</p></div>
+      <div class="flow-step"><span class="n">05</span><h4>Qualification</h4><p>Approved questions collect the details you need.</p></div>
+      <div class="flow-step"><span class="n">06</span><h4>Info recorded</h4><p>Name, address, urgency, service — logged automatically.</p></div>
+      <div class="flow-step"><span class="n">07</span><h4>Appointment offered</h4><p>The prospect is moved toward a booked estimate.</p></div>
+      <div class="flow-step"><span class="n">08</span><h4>You get the lead</h4><p>A structured notification lands in your inbox.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="pricing" id="pricing">
+  <div class="wrap">
+    <div class="pricing-head">
+      <span class="eyebrow">// Pricing</span>
+      <h2>Pick a package. We install everything.</h2>
+      <p>Every plan replaces the customer you're currently losing after hours — not just another software login.</p>
+    </div>
+    <div class="plans">
+      <div class="plan">
+        <h3>Starter</h3>
+        <div class="price">$299<span>/mo</span></div>
+        <div class="setup">$499 setup</div>
+        <ul>
+          <li>Missed-call text-back</li>
+          <li>Basic lead capture</li>
+          <li>Basic automated responses</li>
+          <li>Review requests</li>
+          <li>Monthly performance summary</li>
+        </ul>
+        <a href="#get-demo" class="btn btn-ghost">Get Started</a>
+      </div>
+      <div class="plan featured">
+        <h3>Growth</h3>
+        <div class="price">$599<span>/mo</span></div>
+        <div class="setup">$999 setup</div>
+        <ul>
+          <li>Missed-call recovery</li>
+          <li>AI-assisted conversations</li>
+          <li>Lead qualification</li>
+          <li>Website lead response</li>
+          <li>Appointment scheduling</li>
+          <li>Estimate follow-up + CRM pipeline</li>
+        </ul>
+        <a href="#get-demo" class="btn">Get Started</a>
+      </div>
+      <div class="plan">
+        <h3>Pro</h3>
+        <div class="price">$999<span>/mo</span></div>
+        <div class="setup">$1,500 setup</div>
+        <ul>
+          <li>Everything in Growth</li>
+          <li>Advanced workflows</li>
+          <li>Multiple campaigns</li>
+          <li>Old-lead reactivation</li>
+          <li>Multi-location support</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="#get-demo" class="btn btn-ghost">Get Started</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="industries" id="industries">
+  <div class="wrap" style="display:block">
+    <div style="max-width:720px;margin-bottom:42px">
+      <span class="eyebrow">// Built for Your Business</span>
+      <h2>One recovery system. Customized for how your industry sells.</h2>
+      <p>Lead Rescue AI adapts the follow-up conversation, qualification questions, and booking path to the type of customer your business serves.</p>
+    </div>
+
+    <div class="industry-cards">
+      <article class="industry-card">
+        <span class="industry-icon">🍽️</span>
+        <h3>Restaurants & Catering</h3>
+        <p>Respond to catering and private-event inquiries, capture event details, follow up on quotes, and reconnect with opted-in past customers.</p>
+        <div class="industry-example"><b>RECOVERY EXAMPLE</b>Catering inquiry → event details → quote follow-up → consultation request</div>
+        <a href="#get-demo" class="industry-link">Build My Restaurant Demo →</a>
+      </article>
+
+      <article class="industry-card">
+        <span class="industry-icon">🚗</span>
+        <h3>Auto Detailing</h3>
+        <p>Recover missed calls and quote requests for details, paint correction, ceramic coating, recurring service, and abandoned bookings.</p>
+        <div class="industry-example"><b>RECOVERY EXAMPLE</b>Missed coating inquiry → vehicle details → service qualification → booking</div>
+        <a href="#get-demo" class="industry-link">Build My Detailing Demo →</a>
+      </article>
+
+      <article class="industry-card">
+        <span class="industry-icon">🌳</span>
+        <h3>Land Clearing</h3>
+        <p>Capture acreage and property details, qualify the work requested, schedule site visits, follow up on estimates, and reactivate older leads.</p>
+        <div class="industry-example"><b>RECOVERY EXAMPLE</b>6-acre clearing lead → property address → job scope → estimate visit</div>
+        <a href="#get-demo" class="industry-link">Build My Land Clearing Demo →</a>
+      </article>
+
+      <article class="industry-card">
+        <span class="industry-icon">✂️</span>
+        <h3>Hair Salons</h3>
+        <p>Respond to appointment and consultation inquiries, recover missed calls, help fill cancellation openings, and support rebooking follow-up.</p>
+        <div class="industry-example"><b>RECOVERY EXAMPLE</b>Color inquiry → service details → consultation → appointment request</div>
+        <a href="#get-demo" class="industry-link">Build My Salon Demo →</a>
+      </article>
+
+      <article class="industry-card">
+        <span class="industry-icon">🏠</span>
+        <h3>Home Services & Trades</h3>
+        <p>Built for roofing, HVAC, plumbing, electrical, tree service, landscaping, remodeling, pressure washing, pest control, and more.</p>
+        <div class="industry-example"><b>RECOVERY EXAMPLE</b>Missed service call → urgency → address → estimate or appointment</div>
+        <a href="#get-demo" class="industry-link">Build My Service Demo →</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<div class="stripe"></div>
+
+<section class="lead-section" id="get-demo">
+  <div class="wrap lead-grid">
+    <div class="lead-copy">
+      <span class="eyebrow">// Get Set Up</span>
+      <h2>Tell us about your business. We'll build the demo.</h2>
+      <p>Founding-client pilots start at $250 to implement, then $199–$299 for the first month before rolling onto a standard plan. No fabricated numbers — just your real missed calls, recovered.</p>
+      <div class="lead-note">Submissions are stored so our team can follow up — visible to anyone reviewing demo requests on this page.</div>
+    </div>
+
+    <div class="lead-card">
+      <div id="leadFormWrap">
+        <h3>Request Your Demo</h3>
+        <form id="leadForm">
+          <div class="field-row">
+            <div class="field">
+              <label for="fName">Full name</label>
+              <input id="fName" type="text" required placeholder="Jordan Alvarez">
+            </div>
+            <div class="field">
+              <label for="fBiz">Business name</label>
+              <input id="fBiz" type="text" required placeholder="Gulf Coast Roofing">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="fPhone">Phone</label>
+              <input id="fPhone" type="tel" required placeholder="(555) 555-0192">
+            </div>
+            <div class="field">
+              <label for="fEmail">Email</label>
+              <input id="fEmail" type="email" required placeholder="jordan@gulfcoastroofing.com">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="fIndustry">Industry</label>
+              <select id="fIndustry">
+                <option>Roofing</option>
+                <option>Restaurants & Catering</option>
+                <option>Auto Detailing</option>
+                <option>Land Clearing</option>
+                <option>Hair Salon</option>
+                <option>HVAC</option>
+                <option>Plumbing</option>
+                <option>Electrical</option>
+                <option>Tree Service</option>
+                <option>Landscaping</option>
+                <option>Remodeling</option>
+                <option>Pressure Washing</option>
+                <option>Pest Control</option>
+                <option>Other Service Business</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="fMissed">Missed calls / week</label>
+              <select id="fMissed">
+                <option>1–5</option>
+                <option>6–15</option>
+                <option>16–30</option>
+                <option>30+</option>
+                <option>Not sure</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn submit-btn" id="leadSubmitBtn">Request My Demo →</button>
+          <div class="form-msg" id="leadMsg"></div>
+        </form>
+      </div>
+
+      <div class="lead-success" id="leadSuccess">
+        <div class="check">✓</div>
+        <h4>Request received</h4>
+        <p>We'll text and email you within one business day to schedule your live demo.</p>
+        <div class="lead-ticket" id="leadTicket"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="stripe"></div>
+
+<section class="cta">
+  <div class="wrap">
+    <span class="eyebrow">// Ready When You Are</span>
+    <h2>Let's see what your last missed call actually cost you.</h2>
+    <p>Get a demo built around your industry, your services, and the way your customers actually inquire and book.</p>
+    <a href="#get-demo" class="btn">Request A Demo →</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="tag-line">© 2026 Lead Rescue AI — Every missed call deserves a second chance.</span>
+    <ul class="foot-links">
+      <li><a href="#how">How It Works</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#">Privacy</a></li>
+      <li><a href="#">Terms</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+const script = [
+  {who:'sys', text:"Hi! Sorry we missed your call. This is Gulf Coast Roofing's automated assistant. Are you looking for a repair, replacement, inspection, or something else?"},
+  {who:'cust', text:"My roof is leaking."},
+  {who:'sys', text:"I can help get your info to the team right away. Is the leak currently active?"},
+  {who:'cust', text:"Yes, it's dripping into the hallway."},
+  {who:'sys', text:"Got it — that's urgent. What's the property address?"},
+  {who:'cust', text:"214 Magnolia St."},
+  {who:'sys', text:"Thanks! I can get a crew out tomorrow morning. Does 9 AM work?"},
+  {who:'cust', text:"9 AM works, thank you!"},
+  {who:'card', title:'NEW ROOFING LEAD — NOTIFIED', text:"Name: J. Alvarez\nAddress: 214 Magnolia St\nService: Active leak repair\nUrgency: High\nStatus: Appointment booked, 9:00 AM"}
+];
+
+const thread = document.getElementById('thread');
+const statusEl = document.getElementById('phoneStatus');
+const replayBtn = document.getElementById('replayBtn');
+let playing = false;
+
+function bubbleEl(step){
+  const el = document.createElement('div');
+  if(step.who === 'card'){
+    el.className = 'bubble card';
+    el.innerHTML = `<b>${step.title}</b>${step.text.replace(/\\n/g,'<br>')}`;
+  } else {
+    el.className = 'bubble ' + step.who;
+    el.textContent = step.text;
+  }
+  return el;
+}
+
+async function playDemo(){
+  if(playing) return;
+  playing = true;
+  thread.innerHTML = '';
+  statusEl.textContent = 'missed call';
+  statusEl.classList.remove('recovered');
+
+  for(let i = 0; i < script.length; i++){
+    await new Promise(r => setTimeout(r, i === 0 ? 900 : 1250));
+    const el = bubbleEl(script[i]);
+    thread.appendChild(el);
+    thread.scrollTop = thread.scrollHeight;
+    if(script[i].who === 'card'){
+      statusEl.textContent = 'lead recovered';
+      statusEl.classList.add('recovered');
+    }
+  }
+  playing = false;
+  setTimeout(() => { if(!playing) playDemo(); }, 4200);
+}
+
+replayBtn.addEventListener('click', () => { playing = false; playDemo(); });
+window.addEventListener('load', playDemo);
+
+// ===== Lead capture form =====
+const leadForm = document.getElementById('leadForm');
+const leadSubmitBtn = document.getElementById('leadSubmitBtn');
+const leadMsg = document.getElementById('leadMsg');
+const leadFormWrap = document.getElementById('leadFormWrap');
+const leadSuccess = document.getElementById('leadSuccess');
+const leadTicket = document.getElementById('leadTicket');
+
+leadForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  leadMsg.className = 'form-msg';
+  leadSubmitBtn.disabled = true;
+  leadSubmitBtn.textContent = 'Sending…';
+
+  const lead = {
+    name: document.getElementById('fName').value.trim(),
+    business: document.getElementById('fBiz').value.trim(),
+    phone: document.getElementById('fPhone').value.trim(),
+    email: document.getElementById('fEmail').value.trim(),
+    industry: document.getElementById('fIndustry').value,
+    missedCallsPerWeek: document.getElementById('fMissed').value,
+    submittedAt: new Date().toISOString()
+  };
+
+  try{
+    const key = 'leads:' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
+    const result = await window.storage.set(key, JSON.stringify(lead), true);
+    if(!result){ throw new Error('Storage returned no result'); }
+
+    leadFormWrap.style.display = 'none';
+    leadSuccess.classList.add('show');
+    leadTicket.innerHTML = `<b>DEMO REQUEST — LOGGED</b>Business: ${lead.business}<br>Contact: ${lead.name}<br>Industry: ${lead.industry}<br>Missed calls/wk: ${lead.missedCallsPerWeek}`;
+  } catch(err){
+    leadMsg.textContent = "Something went wrong saving your request — please try again.";
+    leadMsg.classList.add('show','err');
+    leadSubmitBtn.disabled = false;
+    leadSubmitBtn.textContent = 'Request My Demo →';
+  }
+});
+</script>
+
+</body>
+</html>
